@@ -24,3 +24,76 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Initial hidden state for the hero title. Uses visibility rather than transform
+   so GSAP's CSSPlugin doesn't try to parse and inherit the percentage translate
+   (which it mis-bases against the wrapper height for inline-block spans). GSAP
+   flips visibility on and owns the transform from there. React doesn't touch
+   visibility or transform from JSX style, so re-renders can't clobber the tween. */
+.title-mask-initial {
+  visibility: hidden;
+}
+
+/* Hover spotlight. Two layers cooperate so the hovered photo never has anything
+   painted over it (an overlay above the photo causes a visible "blink" the moment
+   hover ends and the photo drops behind the still-fading dim).
+     1. .dim-overlay — fixed full-viewport scrim at z-15, BELOW the photo grid (z-20).
+        Dims the sticky background (sword, title) and the page behind the grid.
+        Because it sits beneath the grid it can never cover any photo.
+     2. .photo-card:not(:hover) gets filter: brightness() while a sibling is hovered,
+        which dims the other photos without stacking anything over them.
+   On hover-leave: the previously-hovered card was never filtered and never had an
+   overlay on top, so it can't blink — only the dim layer + sibling brightness fade
+   back over 700ms. */
+.dim-overlay {
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+body:has(.photo-grid .group:hover) .dim-overlay {
+  opacity: 1;
+}
+
+/* Photo hover scale uses a 300ms "breath" before growing so the brackets have
+   time to fade in alongside the photo before anything starts to enlarge. The
+   delay only applies on hover-in (.photo-card:hover); hover-out reverts via
+   the base .photo-card rule with no delay so leaving still feels snappy.
+   Tailwind v4 generates `hover:scale-[1.04]` using the standalone `scale:`
+   CSS property (not `transform: scale(...)`), so the transition has to target
+   `scale` — `transform` would never animate it. */
+.photo-card {
+  transition: scale 300ms ease-out,
+              filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.photo-card:hover {
+  transition: scale 300ms ease-out 300ms,
+              filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.photo-grid:has(.group:hover) .photo-card:not(:hover) {
+  filter: brightness(0.3);
+}
+
+/* Corner-bracket frame scaler. The outer frame div is positioned + sized by
+   GSAP to the hovered photo's natural rect; this inner scaler grows to 1.04
+   on hover with the same 300ms delay + 300ms ease-out as the photo, so the
+   brackets enlarge in lock-step with the photo after the breath. Hover-out
+   uses the base rule (no delay) so the brackets shrink back immediately.
+   This element uses `transform: scale(...)` (not the standalone `scale:`
+   property), so its transition targets `transform`. */
+.corner-frame-scaler {
+  transform: scale(1);
+  transform-origin: center center;
+  transition: transform 300ms ease-out;
+}
+.photo-grid:has(.group:hover) .corner-frame-scaler {
+  transform: scale(1.04);
+  transition: transform 300ms ease-out 300ms;
+}
+
+/* Bulletproof fallback menu mark — subtle scale on hover so it reads as
+   interactive without taking visual weight away from the centered HUD. */
+.hud-fallback {
+  transition: opacity 500ms ease-out, transform 200ms ease-out;
+}
+.hud-fallback:hover {
+  transform: scale(1.08);
+}
