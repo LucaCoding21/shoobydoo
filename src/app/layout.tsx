@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, DM_Serif_Display, Gasoek_One, Playfair_Display, Cinzel, Instrument_Serif, Noto_Serif, Fraunces } from "next/font/google";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -74,7 +75,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${dmSerif.variable} ${gasoekOne.variable} ${playfairDisplay.variable} ${cinzel.variable} ${instrumentSerif.variable} ${notoSerif.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#0e0f12] text-[#ededeb] overflow-x-hidden overscroll-none">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0e0f12] text-[#ededeb] overflow-x-hidden overscroll-none">
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

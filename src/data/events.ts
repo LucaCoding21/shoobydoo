@@ -17,6 +17,8 @@ export type EventData = {
   // Path of the corresponding tile in HeroSequence's GRID (used to link each
   // home-page photo to its gallery).
   homeThumbSrc: string;
+  venue: string;
+  date: string;
   // Relative paths under /public.
   photos: readonly string[];
 };
@@ -30,6 +32,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "nghtmre",
     title: "NGHTMRE at Harbour",
     homeThumbSrc: "/thumbnails/nghtmre-harbour.jpg",
+    venue: "Harbour",
+    date: "2025",
     photos: withSlug("nghtmre", [
       "_DSC9096-Enhanced-NR.jpg",
       "_DSC8872-Enhanced-NR.jpg",
@@ -51,6 +55,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "phrva",
     title: "PHRVA at Village Studios",
     homeThumbSrc: "/thumbnails/phrva-village-studios.jpg",
+    venue: "Village Studios",
+    date: "2025",
     photos: withSlug("phrva", [
       "7R403291-Enhanced-NR.jpg",
       "7R403305-Enhanced-NR.jpg",
@@ -67,6 +73,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "restricted",
     title: "Restricted at Harbour",
     homeThumbSrc: "/thumbnails/restricted-harbour.jpg",
+    venue: "Harbour",
+    date: "2025",
     photos: withSlug("restricted", [
       "7R402845-Enhanced-NR.jpg",
       "7R402872-Enhanced-NR.jpg",
@@ -79,6 +87,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "viperactive",
     title: "viperactive at Harbour",
     homeThumbSrc: "/thumbnails/viperactive-harbour.jpg",
+    venue: "Harbour",
+    date: "2025",
     photos: withSlug("viperactive", [
       "_7R48068-Enhanced-NR.jpg",
       "_7R48078-Enhanced-NR.jpg",
@@ -91,6 +101,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "insomnia-2025",
     title: "INSOMNIA 2025",
     homeThumbSrc: "/thumbnails/insomnia-2025.jpg",
+    venue: "Insomnia",
+    date: "2025",
     photos: withSlug("insomnia-2025", [
       "_DSC2208-Enhanced-NR.jpg",
       "_DSC2728-Enhanced-NR.jpg",
@@ -108,6 +120,8 @@ export const EVENTS: Record<EventSlug, EventData> = {
     slug: "insomnia-2026",
     title: "INSOMNIA 2026",
     homeThumbSrc: "/thumbnails/insomnia-2026.jpg",
+    venue: "Insomnia",
+    date: "2026",
     photos: withSlug("insomnia-2026", [
       "_7R45554-Enhanced-NR.jpg",
       "_7R45982.jpg",

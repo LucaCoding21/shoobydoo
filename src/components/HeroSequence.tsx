@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { EVENT_BY_HOME_THUMB } from "@/data/events";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 const RUSH_SLIDES = [
   { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
@@ -18,16 +19,17 @@ const RUSH_SLIDES = [
 
 const LANDING_SRC = "/thumbnails/insomnia-2025.jpg";
 
-// Per-photo metadata shown in the centered HUD on hover. Keyed by src so the
-// repeated thumbnails in GRID stay in sync. Descriptions are lorem-ipsum
-// placeholders for now.
-const PHOTO_META: Record<string, { name: string; desc: string }> = {
-  "/thumbnails/insomnia-2025.jpg":       { name: "INSOMNIA",    desc: "Lorem ipsum dolor sit" },
-  "/thumbnails/insomnia-2026.jpg":       { name: "INSOMNIA",    desc: "Sed do eiusmod tempor" },
-  "/thumbnails/nghtmre-harbour.jpg":     { name: "NGHTMRE",     desc: "Consectetur adipiscing elit" },
-  "/thumbnails/viperactive-harbour.jpg": { name: "VIPERACTIVE", desc: "Magna aliqua ut enim" },
-  "/thumbnails/restricted-harbour.jpg":  { name: "RESTRICTED",  desc: "Velit esse cillum" },
-  "/thumbnails/phrva-village-studios.jpg": { name: "PHRVA",     desc: "Excepteur sint occaecat" },
+// Per-photo metadata shown under each tile on hover. Keyed by src so the
+// repeated thumbnails in GRID stay in sync. Tagline format is "Venue · Date" —
+// kept consistent so the same template works for concerts, festivals, and
+// future fashion/editorial galleries.
+const PHOTO_META: Record<string, { name: string; tagline: string }> = {
+  "/thumbnails/insomnia-2025.jpg":         { name: "INSOMNIA",    tagline: "Insomnia 2025" },
+  "/thumbnails/insomnia-2026.jpg":         { name: "INSOMNIA",    tagline: "Insomnia 2026" },
+  "/thumbnails/nghtmre-harbour.jpg":       { name: "NGHTMRE",     tagline: "Harbour 2025" },
+  "/thumbnails/viperactive-harbour.jpg":   { name: "VIPERACTIVE", tagline: "Harbour 2025" },
+  "/thumbnails/restricted-harbour.jpg":    { name: "RESTRICTED",  tagline: "Harbour 2025" },
+  "/thumbnails/phrva-village-studios.jpg": { name: "PHRVA",       tagline: "Village Studios 2025" },
 };
 
 // Grid order, left-to-right, top-to-bottom. 4 across, 3 down = 12 slots.
@@ -77,8 +79,6 @@ export default function HeroSequence() {
   // Index of the photo currently under the cursor (or null). Drives the HUD
   // swap from nav buttons → photo name + description.
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const hoveredMeta =
-    hoveredIdx !== null ? PHOTO_META[GRID[hoveredIdx].src] : null;
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -149,6 +149,22 @@ export default function HeroSequence() {
         overwrite: "auto",
       });
     }
+
+    // Camera-follow: if the hovered photo (or the label beneath it) is
+    // clipped by the viewport, smoothly scroll just enough to bring it
+    // into view. We don't recenter — only nudge when something's cut off,
+    // so the user keeps control of their own scrolling.
+    const vh = window.innerHeight;
+    const labelBuffer = 72; // px below the photo to fit the hover label + a little air
+    const topBuffer = 48;   // px above the photo
+    const bottomOverflow = photoRect.bottom + labelBuffer - vh;
+    const topOverflow = topBuffer - photoRect.top;
+    let scrollDelta = 0;
+    if (bottomOverflow > 0) scrollDelta = bottomOverflow;
+    else if (topOverflow > 0) scrollDelta = -topOverflow;
+    if (scrollDelta !== 0) {
+      window.scrollBy({ top: scrollDelta, behavior: "smooth" });
+    }
   };
 
   useGSAP(
@@ -168,6 +184,12 @@ export default function HeroSequence() {
       const otherGridItems = gridItems.filter((el) => el !== landingGridItem);
 
       const reduce = prefersReducedMotion();
+      // Skip the intro on repeat visits within the same browser session
+      // (e.g. navigating back to home from a gallery). Cleared automatically
+      // when the tab closes, so each new session still gets the full reveal.
+      const skipIntro =
+        typeof window !== "undefined" &&
+        window.sessionStorage.getItem("shoobydoo-intro-played") === "1";
       const rushDuration = isMobile ? 2.4 : 3.2;
       const ease = "power4.inOut";
       const initialClip = isMobile
@@ -189,7 +211,7 @@ export default function HeroSequence() {
       gsap.set(titleEl, { yPercent: 120, visibility: "visible" });
       gsap.set(swordRef.current, { opacity: 0 });
 
-      if (reduce) {
+      if (reduce || skipIntro) {
         gsap.set(rushLayer, { display: "none" });
         gsap.set([grid, ...gridItems], { opacity: 1, scale: 1, x: 0, y: 0 });
         gsap.set(titleEl, { yPercent: 0 });
@@ -292,7 +314,10 @@ export default function HeroSequence() {
       // grid a 1s buffer after the wipes complete before enabling hover, so the
       // corner brackets can't appear over a still-unrevealed photo.
       tl.call(() => setCanHover(true), [], "settled+=3.25");
-      tl.call(() => setPhase("done"), [], "settled+=4.4");
+      tl.call(() => {
+        setPhase("done");
+        window.sessionStorage.setItem("shoobydoo-intro-played", "1");
+      }, [], "settled+=4.4");
     },
     { scope: containerRef, dependencies: [isReady] },
   );
@@ -301,7 +326,7 @@ export default function HeroSequence() {
     <section
       ref={containerRef}
       className="relative w-full bg-[#0e0f12]"
-      style={{ minHeight: isMobile ? "166vh" : "158vh" }}
+      style={{ minHeight: isMobile ? "220vh" : "149vh" }}
       aria-label="Home"
     >
       {/* ════════════════════════════════════════════════════════════════════
@@ -391,8 +416,8 @@ export default function HeroSequence() {
         ref={gridRef}
         className={`photo-grid absolute inset-0 z-20 grid content-center justify-items-center ${
           isMobile
-            ? "grid-cols-2 grid-rows-6 gap-x-[4vw] gap-y-[2vh] px-[5vw] py-[6vh]"
-            : "grid-cols-4 grid-rows-3 gap-x-[2.5vw] gap-y-[14vh] px-[6vw] py-[8vh]"
+            ? "grid-cols-2 grid-rows-6 gap-x-[4vw] gap-y-[7vh] px-[5vw] pt-[11vh] pb-[6vh]"
+            : "grid-cols-4 grid-rows-3 gap-x-[2.5vw] gap-y-[12vh] px-[6vw] pt-[11vh] pb-[6vh]"
         } ${canHover ? "" : "pointer-events-none"}`}
         style={{ opacity: 0 }}
       >
@@ -405,7 +430,7 @@ export default function HeroSequence() {
               prefetch={false}
               aria-label={`Open ${thumb.alt} gallery`}
               className="photo-card group relative aspect-[2/3] cursor-pointer hover:scale-[1.04] block"
-              style={{ height: isMobile ? "24vh" : "38vh" }}
+              style={{ height: isMobile ? "28vh" : "36vh" }}
               onMouseEnter={(e) => {
                 setHoveredIdx(idx);
                 handlePhotoEnter(e);
@@ -429,6 +454,46 @@ export default function HeroSequence() {
                   style={{ objectFit: "cover" }}
                 />
               </div>
+              {/* Per-photo hover label — sits just below the image. Two-line
+                  hierarchy: name (large serif) above tagline (small caps,
+                  dimmed). Opacity driven by hoveredIdx so it can't appear
+                  during the intro and only one shows at a time.
+                  pointer-events-none so it never steals hover. */}
+              <div
+                aria-hidden
+                className={`photo-label absolute left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap flex flex-col items-center gap-1.5 transition-opacity duration-300 ${
+                  canHover && hoveredIdx === idx ? "opacity-100" : "opacity-0"
+                }`}
+                style={{ top: "calc(100% + 0.75rem)" }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-fraunces), Georgia, serif",
+                    fontWeight: 400,
+                    fontVariationSettings: "'opsz' 144, 'SOFT' 100",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.16em",
+                    fontSize: isMobile ? "0.95rem" : "1.15rem",
+                    color: "#ededeb",
+                    lineHeight: 1,
+                  }}
+                >
+                  {PHOTO_META[thumb.src]?.name}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "Arial, Helvetica, sans-serif",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.2em",
+                    fontSize: isMobile ? "0.6rem" : "0.7rem",
+                    color: "#ededeb",
+                    opacity: 0.55,
+                    lineHeight: 1,
+                  }}
+                >
+                  {PHOTO_META[thumb.src]?.tagline}
+                </span>
+              </div>
             </Link>
           );
         })}
@@ -450,10 +515,10 @@ export default function HeroSequence() {
               size. GSAP owns the outer div's translate/width/height for
               position; this inner div owns only the scale. */}
           <div className="corner-frame-scaler relative w-full h-full">
-            <span className="pointer-events-none absolute -top-[10px] -left-[10px] w-7 h-7 border-t-2 border-l-2 border-[#ededeb]" />
-            <span className="pointer-events-none absolute -top-[10px] -right-[10px] w-7 h-7 border-t-2 border-r-2 border-[#ededeb]" />
-            <span className="pointer-events-none absolute -bottom-[10px] -left-[10px] w-7 h-7 border-b-2 border-l-2 border-[#ededeb]" />
-            <span className="pointer-events-none absolute -bottom-[10px] -right-[10px] w-7 h-7 border-b-2 border-r-2 border-[#ededeb]" />
+            <span className="pointer-events-none absolute -top-[8px] -left-[8px] w-5 h-5 border-t-2 border-l-2 border-[#ededeb]" />
+            <span className="pointer-events-none absolute -top-[8px] -right-[8px] w-5 h-5 border-t-2 border-r-2 border-[#ededeb]" />
+            <span className="pointer-events-none absolute -bottom-[8px] -left-[8px] w-5 h-5 border-b-2 border-l-2 border-[#ededeb]" />
+            <span className="pointer-events-none absolute -bottom-[8px] -right-[8px] w-5 h-5 border-b-2 border-r-2 border-[#ededeb]" />
           </div>
         </div>
       </div>
@@ -508,71 +573,15 @@ export default function HeroSequence() {
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════════
-          HUD — bottom-center info readout. Empty by default; on photo hover
-          fades in to show the hovered photo's name + tiny description. Sits
-          at z-[25] so it stays readable above the dim overlay (z-15). Gated
-          on canHover so it can't appear mid-rush.
-          ════════════════════════════════════════════════════════════════════ */}
+      {/* Persistent corner menu — fades in once the intro finishes (canHover).
+          The component positions itself fixed to the viewport. */}
       <div
-        aria-hidden={hoveredIdx === null}
-        className={`hud fixed left-1/2 -translate-x-1/2 z-[25] pointer-events-none flex flex-col items-center gap-2 transition-opacity duration-300 ${
-          canHover && hoveredIdx !== null ? "opacity-100" : "opacity-0"
+        className={`transition-opacity duration-500 ${
+          canHover ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        style={{ bottom: isMobile ? "2rem" : "2.5rem" }}
       >
-        <div
-          style={{
-            fontFamily: "var(--font-fraunces), Georgia, serif",
-            fontWeight: 400,
-            fontVariationSettings: "'opsz' 144, 'SOFT' 100",
-            textTransform: "uppercase",
-            letterSpacing: "0.16em",
-            fontSize: isMobile ? "1.6rem" : "2.25rem",
-            color: "#ededeb",
-            whiteSpace: "nowrap",
-            lineHeight: 1,
-          }}
-        >
-          {hoveredMeta?.name ?? " "}
-        </div>
-        <div
-          style={{
-            fontFamily: "Arial, Helvetica, sans-serif",
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            fontSize: isMobile ? "0.75rem" : "0.85rem",
-            color: "#ededeb",
-            opacity: 0.6,
-            whiteSpace: "nowrap",
-            lineHeight: 1,
-          }}
-        >
-          {hoveredMeta?.desc ?? " "}
-        </div>
+        <HamburgerMenu />
       </div>
-
-      {/* Bulletproof fallback nav — tiny persistent corner control at top-right.
-          Always visible (once the intro completes) regardless of what the HUD
-          is showing, so the menu is never truly hidden even when the centered
-          HUD is swapped to display photo info. Sits at z-[26] so it stays
-          above the dim AND above the HUD. */}
-      <button
-        type="button"
-        aria-label="Menu"
-        className={`hud-fallback fixed z-[26] flex flex-col gap-[4px] cursor-pointer transition-opacity duration-500 ${
-          canHover ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        style={{
-          top: isMobile ? "1.25rem" : "1.75rem",
-          right: isMobile ? "1.25rem" : "1.75rem",
-          padding: "0.5rem",
-        }}
-      >
-        <span className="block w-5 h-[1.5px] bg-[#ededeb]" />
-        <span className="block w-5 h-[1.5px] bg-[#ededeb]" />
-        <span className="block w-5 h-[1.5px] bg-[#ededeb]" />
-      </button>
     </section>
   );
 }
