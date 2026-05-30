@@ -6,6 +6,7 @@ import { EVENTS, allEventSlugs, getEvent } from "@/data/events";
 import PhotoGallery from "@/components/PhotoGallery";
 import AsciiCat from "@/components/AsciiCat";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import SiteWordmark from "@/components/SiteWordmark";
 
 export function generateStaticParams() {
   return allEventSlugs().map((slug) => ({ slug }));
@@ -41,14 +42,11 @@ export default async function EventGalleryPage({
 
   return (
     <main className="min-h-screen bg-[#0e0f12] text-[#ededeb]">
-      <header className="flex items-center px-[3vw] sm:px-[4vw] pt-6 pb-4">
-        <Link
-          href="/"
-          aria-label="Home"
-          className="text-xs sm:text-sm uppercase tracking-[0.2em] opacity-70 hover:opacity-100 transition-opacity"
-        >
-          Home
-        </Link>
+      {/* Fixed height reserves the same top-bar space the old "Home" link gave
+          the row, so removing it doesn't pull the gallery up under the
+          (fixed) centred wordmark. */}
+      <header className="flex items-center px-[3vw] sm:px-[4vw] h-14 sm:h-[3.75rem]">
+        <SiteWordmark />
         <HamburgerMenu />
       </header>
 
@@ -57,10 +55,16 @@ export default async function EventGalleryPage({
           Left rail uses self-start so its sticky positioning works inside the
           grid track. */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-12 px-[4vw] pb-16">
-        <aside className="lg:col-span-1 lg:sticky lg:top-2 lg:self-start lg:h-[calc(100vh-5rem)] lg:overflow-hidden flex flex-col gap-4 min-w-0">
+        <aside className="lg:col-span-1 lg:sticky lg:top-2 lg:self-start lg:h-[calc(100vh-5rem)] lg:overflow-hidden lg:[container-type:inline-size] flex flex-col gap-4 min-w-0">
           <div className="flex flex-col gap-4">
             <h1
-              className="text-4xl sm:text-5xl lg:text-4xl xl:text-5xl leading-[0.95] font-bold"
+              // On desktop the title lives in a narrow 1/4-width rail, so long
+              // single-word titles (e.g. "VIPERACTIVE") used to overflow and get
+              // clipped by the aside's overflow-hidden. The aside is a container
+              // (container-type: inline-size), so size the title in cqi to scale
+              // it to the rail width — 28px floor up to a 48px cap. break-words
+              // is a safety net for any title longer than the column.
+              className="text-4xl sm:text-5xl lg:text-[length:clamp(1.75rem,14cqi,3rem)] leading-[0.95] font-bold break-words"
               style={{
                 fontFamily: "var(--font-geist-sans), Arial, Helvetica, sans-serif",
                 textTransform: "uppercase",

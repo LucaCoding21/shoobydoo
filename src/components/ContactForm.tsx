@@ -5,10 +5,10 @@ import { useState } from "react";
 // Static-site contact form: on submit it composes a mailto: link and hands off
 // to the visitor's email client. No backend required. The sender's name + email
 // are folded into the body since a mailto: can't set the From address.
-const TO = "hello@shoobydoo.com";
+const TO = "shubhammohapatra24@gmail.com";
 
 const fieldClass =
-  "w-full bg-transparent border-b border-white/15 py-2.5 text-[#ededeb] " +
+  "w-full bg-transparent border-b border-white/15 py-2 text-[#ededeb] " +
   "placeholder:text-white/25 focus:outline-none focus:border-white/60 " +
   "transition-colors";
 
@@ -34,15 +34,6 @@ const EVENT_TYPES = [
   "Other",
 ];
 
-const BUDGETS = [
-  "Under $1k",
-  "$1k – $3k",
-  "$3k – $5k",
-  "$5k – $10k",
-  "$10k+",
-  "Let's discuss",
-];
-
 export default function ContactForm() {
   const [sent, setSent] = useState(false);
 
@@ -52,11 +43,9 @@ export default function ContactForm() {
     const data = new FormData(form);
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
-    const subject = String(data.get("subject") || "").trim();
     const eventType = String(data.get("eventType") || "").trim();
     const date = String(data.get("date") || "").trim();
     const artist = String(data.get("artist") || "").trim();
-    const budget = String(data.get("budget") || "").trim();
     const message = String(data.get("message") || "").trim();
 
     const body = [
@@ -66,7 +55,6 @@ export default function ContactForm() {
       eventType && `Event type: ${eventType}`,
       date && `Date: ${date}`,
       artist && `Artist / act: ${artist}`,
-      budget && `Budget: ${budget}`,
       "",
       name && `From: ${name}`,
       email && `Reply to: ${email}`,
@@ -76,7 +64,7 @@ export default function ContactForm() {
 
     const href =
       `mailto:${TO}` +
-      `?subject=${encodeURIComponent(subject || `Enquiry from ${name || "the site"}`)}` +
+      `?subject=${encodeURIComponent(`Enquiry from ${name || "the site"}`)}` +
       `&body=${encodeURIComponent(body)}`;
 
     window.location.href = href;
@@ -84,53 +72,41 @@ export default function ContactForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-7">
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cf-name" className="text-[0.65rem] opacity-50" style={labelStyle}>
-          Name
-        </label>
-        <input
-          id="cf-name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          required
-          placeholder="Your name"
-          className={fieldClass}
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      {/* All short fields share one two-column grid (stacked on mobile) so the
+          form stays compact instead of one tall stack. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-7 gap-y-5">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="cf-name" className="text-[0.65rem] opacity-50" style={labelStyle}>
+            Name
+          </label>
+          <input
+            id="cf-name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            placeholder="Your name"
+            className={fieldClass}
+          />
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cf-email" className="text-[0.65rem] opacity-50" style={labelStyle}>
-          Email
-        </label>
-        <input
-          id="cf-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          placeholder="you@email.com"
-          className={fieldClass}
-        />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="cf-email" className="text-[0.65rem] opacity-50" style={labelStyle}>
+            Email
+          </label>
+          <input
+            id="cf-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="you@email.com"
+            className={fieldClass}
+          />
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="cf-subject" className="text-[0.65rem] opacity-50" style={labelStyle}>
-          Subject
-        </label>
-        <input
-          id="cf-subject"
-          name="subject"
-          type="text"
-          placeholder="Booking · Press · Collab"
-          className={fieldClass}
-        />
-      </div>
-
-      {/* Booking details — two columns on wider viewports, stacked on mobile. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
-        <div className="flex flex-col gap-2 relative">
+        <div className="flex flex-col gap-1.5 relative">
           <label htmlFor="cf-event-type" className="text-[0.65rem] opacity-50" style={labelStyle}>
             Event type
           </label>
@@ -151,13 +127,13 @@ export default function ContactForm() {
           </select>
           <span
             aria-hidden
-            className="pointer-events-none absolute right-1 bottom-3 text-white/40"
+            className="pointer-events-none absolute right-1 bottom-2.5 text-white/40"
           >
             ▾
           </span>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="cf-date" className="text-[0.65rem] opacity-50" style={labelStyle}>
             Date
           </label>
@@ -169,7 +145,7 @@ export default function ContactForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
           <label htmlFor="cf-artist" className="text-[0.65rem] opacity-50" style={labelStyle}>
             Artist / act
           </label>
@@ -181,43 +157,16 @@ export default function ContactForm() {
             className={fieldClass}
           />
         </div>
-
-        <div className="flex flex-col gap-2 relative">
-          <label htmlFor="cf-budget" className="text-[0.65rem] opacity-50" style={labelStyle}>
-            Budget
-          </label>
-          <select
-            id="cf-budget"
-            name="budget"
-            defaultValue=""
-            className={selectClass}
-          >
-            <option value="" disabled>
-              Select…
-            </option>
-            {BUDGETS.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute right-1 bottom-3 text-white/40"
-          >
-            ▾
-          </span>
-        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="cf-message" className="text-[0.65rem] opacity-50" style={labelStyle}>
           Message
         </label>
         <textarea
           id="cf-message"
           name="message"
-          rows={5}
+          rows={4}
           required
           placeholder="Tell me about the night…"
           className={`${fieldClass} resize-none`}

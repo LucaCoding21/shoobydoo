@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import SiteWordmark from "@/components/SiteWordmark";
 import ContactForm from "@/components/ContactForm";
 import ContactAscii from "@/components/ContactAscii";
 
@@ -12,28 +12,23 @@ export const metadata: Metadata = {
 
 // Direct channels mirrored from the site footer so the brand stays consistent.
 const CHANNELS: { label: string; value: string; href: string; external?: boolean }[] = [
-  { label: "Email", value: "hello@shoobydoo.com", href: "mailto:hello@shoobydoo.com" },
-  { label: "Instagram", value: "@shoobydoo", href: "https://instagram.com/shoobydoo", external: true },
-  { label: "TikTok", value: "@shoobydoo", href: "https://tiktok.com/@shoobydoo", external: true },
+  { label: "Email", value: "shubhammohapatra24@gmail.com", href: "mailto:shubhammohapatra24@gmail.com" },
+  { label: "Instagram", value: "@shoobydoofruitsnacks", href: "https://instagram.com/shoobydoofruitsnacks", external: true },
 ];
 
 export default function ContactPage() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0e0f12] text-[#ededeb]">
-      <header className="relative z-20 flex items-center px-[3vw] sm:px-[4vw] pt-6 pb-4">
-        <Link
-          href="/"
-          aria-label="Home"
-          className="text-xs sm:text-sm uppercase tracking-[0.2em] opacity-70 hover:opacity-100 transition-opacity"
-        >
-          Home
-        </Link>
+      {/* Fixed height reserves the same top-bar space the old "Home" link gave
+          the row (kept identical to the gallery header). */}
+      <header className="relative z-20 flex items-center px-[3vw] sm:px-[4vw] h-14 sm:h-[3.75rem]">
+        <SiteWordmark />
         <HamburgerMenu />
       </header>
 
       {/* Two columns: title + direct channels on the left, the mailto form on
           the right. Collapses to a single column on mobile. */}
-      <section className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 px-[6vw] pt-[6vh] pb-[6vh]">
+      <section className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 px-[6vw] pt-[16vh] pb-[6vh]">
         <div className="lg:col-span-5 flex flex-col gap-9">
           <div>
             <h1
@@ -96,25 +91,15 @@ export default function ContactPage() {
             ))}
           </div>
 
-          <p
-            className="max-w-sm text-[0.7rem] leading-relaxed opacity-40"
-            style={{
-              fontFamily: "Arial, Helvetica, sans-serif",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-            }}
-          >
-            Based in Sydney · Shooting worldwide · Replies within a few days
-          </p>
-
-          {/* ASCII signature — same shimmer/glitch as the gallery rail,
-              nudged toward the page's left edge. */}
-          <div className="mt-2 -ml-[3vw]">
+          {/* ASCII signature — same shimmer/glitch as the gallery rail.
+              Mirrored on its vertical axis (-scale-x-100) and parked on the
+              right side of the screen, behind the copy (-z-10), as a sigil. */}
+          <div className="pointer-events-none absolute bottom-0 right-0 -z-10 -mr-[3vw] -scale-x-100">
             <ContactAscii />
           </div>
         </div>
 
-        <div className="lg:col-span-7 lg:max-w-2xl w-full lg:-mt-12">
+        <div className="lg:col-span-7 lg:max-w-2xl w-full lg:mt-2">
           <ContactForm />
         </div>
       </section>

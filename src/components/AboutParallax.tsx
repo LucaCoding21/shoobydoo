@@ -21,9 +21,9 @@ const GRAIN =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
 // Backdrop that drifts as the page scrolls. The gothic sword art (same
-// inverted/screen treatment as the rest of the site) and a green depth glow
-// each move at their own rate via ScrollTrigger scrub, so the page reads with
-// depth without pulling focus from the photography. Decorative only —
+// inverted/screen treatment as the rest of the site) moves via ScrollTrigger
+// scrub, so the page reads with depth without pulling focus from the
+// photography. Decorative only —
 // aria-hidden, non-interactive, and disabled under reduced-motion.
 export default function AboutParallax() {
   const scope = useRef<HTMLDivElement>(null);
@@ -58,18 +58,6 @@ export default function AboutParallax() {
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 select-none overflow-hidden"
     >
-      {/* Green depth glow — the brand accent, drifting slowest so it reads as
-          the furthest layer. */}
-      <div
-        data-parallax="-10"
-        className="absolute left-1/2 top-[12vh] h-[65vh] w-[65vh] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(158,240,26,0.12) 0%, rgba(158,240,26,0) 68%)",
-          filter: "blur(24px)",
-        }}
-      />
-
       {/* Primary sword — anchored behind the title, slow upward drift. */}
       <div
         data-parallax="-20"

@@ -4,59 +4,211 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { CustomEase } from "gsap/CustomEase";
 
-// The menu is a fixed three-item set styled as a film frame. Each word hides a
-// photo behind its "O" glyph that's revealed on hover ("w[o]rk", "ab[o]ut",
-// "c[o]ntact").
-type MenuItem = { word: string; href: string };
+gsap.registerPlugin(useGSAP, CustomEase);
 
-const MENU: readonly MenuItem[] = [
-  { word: "WORK", href: "/" },
-  { word: "ABOUT", href: "/about" },
-  { word: "CONTACT", href: "/contact" },
+// The whole open state is a faithful port of olivierlarose/nav-menu: the panel
+// drops in via height 0 -> auto, a backdrop dims the page downward, each word's
+// letters rise from below (staggered per word), and the footer meta rises in
+// last after a hold. The tutorial drives this with Framer Motion on
+// cubic-bezier(0.76, 0, 0.24, 1); we reproduce the exact curve as a GSAP
+// CustomEase so the motion matches with the project's own animation lib.
+CustomEase.create("navMenu", "M0,0 C0.76,0 0.24,1 1,1");
+const EASE = "navMenu";
+
+// Real site routes. Each carries two portrait photos from one event folder,
+// shown side by side on the right when the link is hovered/focused.
+type NavLink = {
+  title: string;
+  href: string;
+  imgs: readonly [string, string];
+};
+
+// Two portrait (2:3) shots per link, from the same folder, shown uncropped.
+const LINKS: readonly NavLink[] = [
+  {
+    title: "HOME",
+    href: "/",
+    imgs: [
+      "/events/insomnia-2025/_DSC2208-Enhanced-NR.jpg",
+      "/events/insomnia-2025/_DSC2728-Enhanced-NR.jpg",
+    ],
+  },
+  {
+    title: "ABOUT",
+    href: "/about",
+    imgs: [
+      "/events/nghtmre/_DSC9026-Enhanced-NR.jpg",
+      "/events/nghtmre/_DSC9096-Enhanced-NR.jpg",
+    ],
+  },
+  {
+    title: "CONTACT",
+    href: "/contact",
+    imgs: [
+      "/events/phrva/7R403291-Enhanced-NR.jpg",
+      "/events/phrva/7R403318-Enhanced-NR.jpg",
+    ],
+  },
 ];
 
-// Photos cycled through the revealed "O". Each hover advances to the next one,
-// so the picture changes every time and never repeats back-to-back. Add or
-// swap paths here to change the rotation.
-const POOL: readonly string[] = [
-  "/events/insomnia-2026/_7R46147.jpg",
-  "/events/insomnia-2025/_DSC2208-Enhanced-NR.jpg",
-  "/events/insomnia-2026/_7R46402-Enhanced-NR.jpg",
-  "/events/insomnia-2025/_DSC2728-Enhanced-NR.jpg",
-  "/events/insomnia-2026/_7R46201-Enhanced-NR.jpg",
-  "/events/insomnia-2025/_DSC2886-Enhanced-NR.jpg",
-  "/events/insomnia-2026/_7R46555.jpg",
-  "/events/insomnia-2025/_DSC2977-Enhanced-NR.jpg",
+// Footer meta lines — mirror the site Footer's "Connect" column, in the same
+// small-caps label/value form the tutorial's footer uses.
+const META: readonly { label: string; value: string }[] = [
+  { label: "Follow", value: "@shoobydoofruitsnacks" },
+  { label: "Email", value: "shubhammohapatra24@gmail.com" },
 ];
 
-// Sprocket holes punched into the film strips, top and bottom.
-const HOLES = Array.from({ length: 7 });
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
-export default function HamburgerMenu() {
+// Each letter is its own inline-block span so it can be translated up out of the
+// clipping <p>. Spaces become non-breaking so they keep their width in flex.
+function splitChars(word: string) {
+  return word.split("").map((c, i) => (
+    <span key={i} className="nav-char">
+      {c === " " ? " " : c}
+    </span>
+  ));
+}
+
+// `introMask`: only the homepage hero sets this. It makes the [MENU] button
+// clip its label and start it hidden below the fold, so HeroSequence's intro
+// timeline can rise the label in 1:1 sync with the centred nav logo. Elsewhere
+// the button shows immediately (no mask), so the default is off.
+export default function HamburgerMenu({
+  introMask = false,
+}: {
+  introMask?: boolean;
+}) {
   const [open, setOpen] = useState(false);
-  // One pool index per word, staggered so the words start on different photos.
-  const [photoIdx, setPhotoIdx] = useState<number[]>(() =>
-    MENU.map((_, i) => i % POOL.length),
-  );
+  // Which link is hovered/focused: drives the cross-link blur and the preview
+  // image, exactly like the tutorial's selectedLink state.
+  const [selected, setSelected] = useState<{ active: boolean; index: number }>({
+    active: false,
+    index: 0,
+  });
   const pathname = usePathname();
 
-  // Refs for focus management: the toggle/close button and each word link.
+  const scope = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+
+  // Refs for focus management: the toggle/close button, the in-menu logo, and
+  // each word link.
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const logoRef = useRef<HTMLAnchorElement>(null);
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  // Advance one word to its next photo (called as hover/focus begins). Skips
-  // any photo currently shown by another word, so no two words ever display the
-  // same picture at once.
-  const cyclePhoto = (i: number) =>
-    setPhotoIdx((prev) => {
-      const taken = new Set(prev.filter((_, j) => j !== i));
-      let n = (prev[i] + 1) % POOL.length;
-      while (taken.has(n)) n = (n + 1) % POOL.length;
-      const next = [...prev];
-      next[i] = n;
-      return next;
-    });
+  // Initial hidden state. GSAP owns the char/meta transforms (no CSS transform
+  // to fight with), and the closed panel — height 0, overflow hidden — keeps
+  // everything clipped before JS runs, so there's no flash.
+  useGSAP(
+    () => {
+      gsap.set([".nav-menu", ".nav-backdrop"], { height: 0 });
+      gsap.set([".nav-char", ".nav-meta-line"], { yPercent: 100, opacity: 0 });
+      // Logo masks like the hero wordmark: 120% (not 100%) so the tops of the
+      // letters don't peek past the clip box.
+      gsap.set(".nav-logo-inner", { yPercent: 120, opacity: 0 });
+    },
+    { scope },
+  );
+
+  // Animate on every `open` flip. Each pass tweens from the current state to the
+  // target, so rapid toggles redirect smoothly. Rebuilding per toggle (instead
+  // of reversing one paused timeline) keeps it robust under React's dev
+  // double-invocation — the prior approach left letters stuck at yPercent:100.
+  useGSAP(
+    () => {
+      // Nothing to animate on the very first render (already hidden).
+      if (firstRender.current) {
+        firstRender.current = false;
+        if (!open) return;
+      }
+
+      const root = scope.current!;
+      const reduced = prefersReducedMotion();
+      const tl = gsap.timeline({ defaults: { ease: EASE } });
+
+      if (open) {
+        const d = reduced ? 0.2 : 1;
+        // Panel drops open; backdrop dims downward.
+        tl.to(".nav-menu", { height: "auto", duration: d }, 0).to(
+          ".nav-backdrop",
+          { height: "100vh", duration: d },
+          0,
+        );
+        // Logo rises in at top-left, in step with the panel.
+        tl.to(".nav-logo-inner", { yPercent: 0, opacity: 1, duration: d }, 0);
+        // Letters rise from y:100%, staggered within each word; every word
+        // starts together at t=0 (tutorial restarts the stagger per link).
+        gsap.utils.toArray<HTMLElement>(".nav-link", root).forEach((link) => {
+          tl.to(
+            link.querySelectorAll(".nav-char"),
+            {
+              yPercent: 0,
+              opacity: 1,
+              duration: d,
+              stagger: reduced ? 0 : 0.02,
+            },
+            0,
+          );
+        });
+        // Footer meta rises in last, after a hold.
+        tl.to(
+          ".nav-meta-line",
+          {
+            yPercent: 0,
+            opacity: 1,
+            duration: d,
+            stagger: reduced ? 0 : 0.03,
+          },
+          reduced ? 0 : 0.3,
+        );
+      } else {
+        // Close slow enough to actually watch each piece leave (the thing that
+        // makes the inspiration feel good): letters slide back down and the
+        // meta fades — staggered, so you see them go — while the panel and
+        // backdrop take a full ~1s to collapse around them.
+        const collapse = reduced ? 0.2 : 1;
+        const content = reduced ? 0.2 : 0.7;
+        gsap.utils.toArray<HTMLElement>(".nav-link", root).forEach((link) => {
+          tl.to(
+            link.querySelectorAll(".nav-char"),
+            {
+              yPercent: 100,
+              opacity: 0,
+              duration: content,
+              stagger: reduced ? 0 : 0.02,
+            },
+            0,
+          );
+        });
+        tl.to(
+          ".nav-meta-line",
+          {
+            yPercent: 100,
+            opacity: 0,
+            duration: content,
+            stagger: reduced ? 0 : 0.03,
+          },
+          0,
+        )
+          .to(
+            ".nav-logo-inner",
+            { yPercent: 120, opacity: 0, duration: content },
+            0,
+          )
+          .to(".nav-backdrop", { height: 0, duration: collapse }, 0)
+          .to(".nav-menu", { height: 0, duration: collapse }, 0);
+      }
+    },
+    { scope, dependencies: [open] },
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +218,9 @@ export default function HamburgerMenu() {
 
     // Tab order through the open menu: close button, then the word links.
     const order = (): HTMLElement[] =>
-      [buttonRef.current, ...linkRefs.current].filter(Boolean) as HTMLElement[];
+      [buttonRef.current, logoRef.current, ...linkRefs.current].filter(
+        Boolean,
+      ) as HTMLElement[];
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -102,310 +256,359 @@ export default function HamburgerMenu() {
     };
 
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const toggle = buttonRef.current;
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
       // Return focus to the toggle when the menu closes.
       toggle?.focus();
     };
   }, [open]);
 
-  const Strip = () => (
-    <div className="film-strip" aria-hidden>
-      {HOLES.map((_, i) => (
-        <span key={i} className="film-hole" />
-      ))}
-    </div>
-  );
-
   return (
-    <>
+    <div ref={scope} className="contents">
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
-        className="hamburger-btn fixed top-5 right-5 sm:top-7 sm:right-7 z-[60] flex items-center justify-center w-10 h-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded"
+        className={`menu-toggle fixed top-7 right-5 sm:right-7 z-[60] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded${
+          introMask ? " menu-clip" : ""
+        }`}
       >
-        <span aria-hidden className="hamburger-icon" data-open={open}>
-          <span className="bar bar-top" />
-          <span className="bar bar-mid" />
-          <span className="bar bar-bot" />
+        {/* [MENU] / [CLOSE]. The brackets are static; the word rolls between the
+            two states on click — MENU on top, CLOSE below, the track pushes up
+            one line when open so CLOSE rises from the bottom. */}
+        <span
+          aria-hidden
+          className={`menu-label${introMask ? " menu-intro-initial" : ""}`}
+        >
+          <span className="menu-bracket">[</span>
+          <span className="label-clip">
+            <span className="label-track" data-open={open}>
+              <span className="label-line">MENU</span>
+              <span className="label-line">CLOSE</span>
+            </span>
+          </span>
+          <span className="menu-bracket">]</span>
         </span>
       </button>
 
-      {/* Full-screen film frame slides in from the right (right-to-left). */}
+      {/* In-menu logo — the Shoobydoo wordmark on the LEFT, shown only while the
+          menu is open (the centred site logo sits behind the panel). */}
+      <Link
+        ref={logoRef}
+        href="/"
+        onClick={() => setOpen(false)}
+        aria-label="Shoobydoo — home"
+        aria-hidden={!open}
+        tabIndex={open ? 0 : -1}
+        data-open={open}
+        className="nav-logo fixed top-7 left-5 sm:left-7 z-[60] select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded"
+      >
+        <span className="nav-logo-inner">Shoobydoo</span>
+      </Link>
+
+      {/* Dimming backdrop — grows downward behind the panel; click to close. */}
+      <div
+        className="nav-backdrop fixed inset-x-0 top-0 z-40"
+        data-open={open}
+        onClick={() => setOpen(false)}
+        aria-hidden
+      />
+
+      {/* Full-width panel that drops in from the top. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Site menu"
         inert={!open}
         data-open={open}
-        className={`film-panel fixed inset-0 z-50 flex flex-col bg-[#0e0f12] ${
-          open ? "" : "pointer-events-none"
-        }`}
+        className="nav-menu fixed inset-x-0 top-0 z-50 bg-[#0e0f12]"
       >
-        <Strip />
+        <div className="nav-wrapper">
+          <div className="nav-container">
+            <div className="nav-body">
+              {LINKS.map((item, i) => {
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.title}
+                    ref={(el) => {
+                      linkRefs.current[i] = el;
+                    }}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    onMouseEnter={() => setSelected({ active: true, index: i })}
+                    onMouseLeave={() => setSelected({ active: false, index: i })}
+                    aria-current={active ? "page" : undefined}
+                    className="nav-link-wrap focus:outline-none"
+                  >
+                    {/* Other links blur out while one is hovered. */}
+                    <p
+                      className="nav-link"
+                      data-dim={selected.active && selected.index !== i}
+                    >
+                      {splitChars(item.title)}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
 
-        <div className="flex-1 flex flex-col px-[7vw] py-[5vh] min-h-0">
-          <nav className="flex-1 flex flex-col justify-center gap-1 sm:gap-2 min-h-0">
-          {MENU.map((item, i) => {
-            const active = item.href !== "#" && pathname === item.href;
-            // Split the word at its "O": the two halves slide apart on hover,
-            // opening a gap where the photo is revealed.
-            const oIdx = item.word.indexOf("O");
-            const pre = item.word.slice(0, oIdx);
-            const post = item.word.slice(oIdx + 1);
-            return (
-              <Link
-                key={item.word}
-                ref={(el) => {
-                  linkRefs.current[i] = el;
-                }}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                onMouseEnter={() => cyclePhoto(i)}
-                onFocus={() => cyclePhoto(i)}
-                aria-current={active ? "page" : undefined}
-                data-open={open}
-                className="word-link group focus:outline-none"
-                style={{ transitionDelay: open ? `${180 + i * 90}ms` : "0ms" }}
-              >
-                <span className="word" data-active={active || undefined}>
-                  <span className="seg seg-pre">{pre}</span>
-                  <span className="o-slot">
-                    <span className="o-letter">O</span>
-                    <span className="o-photo">
-                      <Image
-                        src={POOL[photoIdx[i]]}
-                        alt=""
-                        fill
-                        sizes="240px"
-                        quality={75}
-                        style={{ objectFit: "cover" }}
-                      />
-                    </span>
+            <div className="nav-foot">
+              {META.map((m) => (
+                <div className="nav-meta" key={m.label}>
+                  <span className="nav-meta-line">
+                    <span className="nav-meta-label">{m.label}:</span> {m.value}
                   </span>
-                  <span className="seg seg-post">{post}</span>
-                </span>
-              </Link>
-            );
-          })}
-          </nav>
-
-          {/* Wordmark footer — mirrors the site Footer for continuity. */}
-          <div className="menu-foot">
-            <span className="menu-wordmark">Shoobydoo</span>
-            <span className="menu-tagline">
-              Concert photography from the harbour and beyond.
-            </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <Strip />
-
-        {/* Preload the whole pool once the menu opens so cycling is instant.
-            Same sizes/quality as the visible photo to guarantee a cache hit. */}
-        {open && (
-          <div aria-hidden className="photo-preload">
-            {POOL.map((src) => (
-              <Image
-                key={src}
-                src={src}
-                alt=""
-                width={240}
-                height={170}
-                sizes="240px"
-                quality={75}
-              />
+          {/* Preview — two portrait shots from the focused link's event
+              folder, side by side (desktop only). */}
+          <div
+            className="nav-image hidden lg:flex"
+            data-active={selected.active}
+            aria-hidden
+          >
+            {LINKS[selected.index].imgs.map((src) => (
+              <div className="nav-photo" key={src}>
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="200px"
+                  quality={75}
+                  style={{ objectFit: "cover" }}
+                />
+              </div>
             ))}
           </div>
-        )}
+        </div>
       </div>
 
       <style>{`
-        .hamburger-icon {
-          position: relative;
-          display: block;
-          width: 22px;
-          height: 14px;
-        }
-        .hamburger-icon .bar {
-          position: absolute;
-          left: 0;
-          width: 100%;
-          height: 1.5px;
-          background: #ededeb;
-          border-radius: 1px;
-          transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-                      opacity 180ms ease-out,
-                      background 200ms ease-out,
-                      top 240ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .hamburger-icon .bar-top { top: 0; }
-        .hamburger-icon .bar-mid { top: 50%; transform: translateY(-50%); }
-        .hamburger-icon .bar-bot { top: 100%; transform: translateY(-100%); }
-
-        /* When open, the icon sits on the black film strip — stay light so it reads. */
-        .hamburger-icon[data-open="true"] .bar { background: #ededeb; }
-        .hamburger-icon[data-open="true"] .bar-top {
-          top: 50%;
-          transform: translateY(-50%) rotate(45deg);
-        }
-        .hamburger-icon[data-open="true"] .bar-mid { opacity: 0; }
-        .hamburger-icon[data-open="true"] .bar-bot {
-          top: 50%;
-          transform: translateY(-50%) rotate(-45deg);
-        }
-
-        .hamburger-btn { opacity: 0.85; transition: opacity 200ms ease-out; }
-        .hamburger-btn:hover,
-        .hamburger-btn:focus-visible { opacity: 1; }
-
-        /* Panel slide — opaque full-screen takeover, right to left. */
-        .film-panel {
-          transform: translateX(100%);
-          transition: transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .film-panel[data-open="true"] { transform: translateX(0); }
-
-        /* Off-screen pool preloader — fetched but never seen. */
-        .photo-preload {
-          position: absolute;
-          width: 0;
-          height: 0;
-          overflow: hidden;
-          opacity: 0;
-          pointer-events: none;
-        }
-
-        /* Strips blend into the panel background; only the white perforations
-           show, floating top and bottom like a film-negative edge. */
-        .film-strip {
-          flex: none;
-          height: clamp(40px, 7vh, 70px);
-          background: #0e0f12;
-          display: flex;
-          align-items: center;
-          justify-content: space-around;
-          padding: 0 4vw;
-          overflow: hidden;
-        }
-        .film-hole {
-          flex: none;
-          width: clamp(26px, 5vw, 56px);
-          height: 46%;
-          background: #ededeb;
-          border-radius: 5px;
-        }
-
-        /* Wordmark footer — same Fraunces / Arial-caps treatment as the site
-           Footer, so the menu reads as part of the brand. */
-        .menu-foot {
-          flex: none;
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-          padding-top: 1.25rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .menu-wordmark {
-          font-family: var(--font-fraunces), Georgia, serif;
-          font-variation-settings: "opsz" 144, "SOFT" 100;
-          font-size: 1.05rem;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #ededeb;
-          opacity: 0.7;
-        }
-        .menu-tagline {
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: 0.7rem;
-          letter-spacing: 0.04em;
-          color: #ededeb;
-          opacity: 0.32;
-        }
-
-        /* Stacked display words — the brand's Fraunces display cut. */
-        .word-link {
-          transition: opacity 420ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .film-panel[data-open="false"] .word-link { opacity: 0; transform: translateX(40px); }
-        .film-panel[data-open="true"] .word-link { opacity: 1; transform: translateX(0); }
-
-        .word {
+        .menu-toggle {
           display: inline-flex;
-          align-items: baseline;
+          align-items: flex-start;
+          cursor: pointer;
+        }
+
+        /* Homepage-only intro mask. The button becomes the clip window and the
+           label rises out of it via GSAP, mirroring the nav logo's wrapper
+           (overflow hidden + 0.2em paddingBottom, with the label set to
+           yPercent:120 so it clears the padded box). */
+        .menu-toggle.menu-clip {
+          overflow: hidden;
+          padding-bottom: 0.2em;
+        }
+        /* No-flash backstop until GSAP flips visibility on (mirrors the hero
+           title's .title-mask-initial). GSAP then owns the transform. */
+        .menu-intro-initial {
+          visibility: hidden;
+        }
+
+        /* [MENU] / [CLOSE] — same Fraunces display cut, weight, opsz and
+           letter-spacing as the "SHOOBYDOO" wordmark, and aligned to the same
+           top (1.75rem) so the two read as one line of type. */
+        .menu-label {
+          display: inline-flex;
+          align-items: flex-start;
+          line-height: 1;
           font-family: var(--font-fraunces), Georgia, serif;
           font-weight: 400;
           font-variation-settings: "opsz" 144, "SOFT" 100;
-          font-size: clamp(2.5rem, 10vw, 7rem);
-          line-height: 1.06;
+          font-size: clamp(0.78rem, 3.3vw, 1.05rem);
           letter-spacing: 0.08em;
           text-transform: uppercase;
           color: #ededeb;
-          transition: opacity 200ms ease-out;
         }
-        .word-link:hover .word,
-        .word-link:focus-visible .word { opacity: 0.92; }
-
-        /* The "O" splits the word in two. On hover the halves slide outward and
-           the photo is revealed in the gap they open. The "O" slot keeps its
-           glyph width in flow at all times, so the halves part via transform
-           only — no reflow, no horizontal scroll. */
-        .seg {
+        @media (min-width: 768px) {
+          .menu-label { font-size: clamp(0.85rem, 1.2vw, 1.2rem); }
+        }
+        .menu-bracket {
           display: inline-block;
-          transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+          line-height: 1;
         }
-        .o-slot {
-          position: relative;
+        /* One-line clip window; the track holds two stacked copies of the word
+           so hover can roll a fresh one up from below. Only the word lives in
+           here — the brackets sit outside and stay put. */
+        .label-clip {
           display: inline-block;
-        }
-        .o-letter {
-          display: inline-block;
-          transition: opacity 200ms ease-out;
-        }
-        .o-photo {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          z-index: 2;
-          width: 1.55em;
-          height: 1.1em;
-          border-radius: 0.08em;
           overflow: hidden;
-          transform: translate(-50%, -50%) scale(0.75);
-          opacity: 0;
-          transition: opacity 220ms ease-out,
-                      transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+          height: 1em;
+          line-height: 1;
+        }
+        .label-track {
+          display: block;
+          /* Buttery ease-in-out: eases in gently so the roll starts slow and
+             soft on click, glides through the middle, then settles without
+             snapping at the end. */
+          transition: transform 950ms cubic-bezier(0.62, 0.03, 0.26, 1);
+        }
+        .label-line {
+          display: block;
+          height: 1em;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        /* Push-from-bottom flip: when open, roll the word up one line so CLOSE
+           rises into view from below. */
+        .label-track[data-open="true"] {
+          transform: translateY(-1em);
+        }
+
+        /* ── Open state (olivierlarose/nav-menu) ─────────────────────────── */
+
+        /* In-menu logo — top-left wordmark matching the site wordmark's type.
+           The outer link is a clip mask; the inner span rises in via GSAP like
+           the link words. Clicks are gated to the open state. */
+        .nav-logo {
+          overflow: hidden;
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-weight: 400;
+          font-variation-settings: "opsz" 144, "SOFT" 100;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          line-height: 1;
+          color: #ededeb;
+          font-size: clamp(0.9rem, 4vw, 1.25rem);
+          white-space: nowrap;
+          padding-bottom: 0.2em;
           pointer-events: none;
         }
-        /* Slide the halves apart and fade the "O" out to clear the gap. */
-        .word-link:hover .seg-pre,
-        .word-link:focus-visible .seg-pre { transform: translateX(-0.55em); }
-        .word-link:hover .seg-post,
-        .word-link:focus-visible .seg-post { transform: translateX(0.55em); }
-        .word-link:hover .o-letter,
-        .word-link:focus-visible .o-letter { opacity: 0; }
-        .word-link:hover .o-photo,
-        .word-link:focus-visible .o-photo {
-          opacity: 1;
-          transform: translate(-50%, -50%) scale(1);
+        @media (min-width: 768px) {
+          .nav-logo { font-size: clamp(1rem, 1.5vw, 1.5rem); }
+        }
+        .nav-logo[data-open="true"] { pointer-events: auto; }
+        /* GSAP solely owns the transform (yPercent) — a CSS transform here would
+           reappear when GSAP's context reverts and freeze the logo offscreen.
+           opacity:0 is just the no-flash backstop until gsap.set runs. */
+        .nav-logo-inner {
+          display: inline-block;
+          opacity: 0;
+        }
+
+        /* Dim layer behind the panel. Height is animated by GSAP 0 -> 100vh; it
+           only catches clicks once open. */
+        .nav-backdrop {
+          height: 0;
+          overflow: hidden;
+          background: rgba(0, 0, 0, 0.5);
+          pointer-events: none;
+        }
+        .nav-backdrop[data-open="true"] { pointer-events: auto; }
+
+        /* The drop-down panel. Height is animated by GSAP 0 -> auto. */
+        .nav-menu {
+          height: 0;
+          overflow: hidden;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-wrapper {
+          display: flex;
+          gap: 50px;
+          padding: 6.5rem 6vw 2.5rem;
+          align-items: flex-start;
+        }
+        .nav-container {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        /* Big display words flow in a wrapping row, just like the tutorial. */
+        .nav-body {
+          display: flex;
+          flex-wrap: wrap;
+          margin-top: 1rem;
+        }
+        .nav-link-wrap {
+          color: #ededeb;
+          text-decoration: none;
+          text-transform: uppercase;
+        }
+        .nav-link {
+          margin: 0;
+          display: flex;
+          overflow: hidden;
+          padding-right: 30px;
+          padding-top: 10px;
+          font-family: var(--font-fraunces), Georgia, serif;
+          font-weight: 400;
+          font-variation-settings: "opsz" 144, "SOFT" 100;
+          font-size: 2rem;
+          line-height: 1.05;
+          letter-spacing: 0.02em;
+          color: #ededeb;
+          /* Blur out while another link is hovered. Slow, eased ramp (expo-out
+             curve) so the focus pull-in glides rather than snapping. */
+          transition: filter 650ms cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 650ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-link[data-dim="true"] {
+          filter: blur(4px);
+          opacity: 0.55;
+        }
+        /* GSAP sets the hidden start state (yPercent:100, opacity:0); the
+           closed panel clips it until then. */
+        .nav-char {
+          display: inline-block;
+        }
+
+        /* Footer meta — same Arial small-caps as the site Footer column labels;
+           each line rides up out of its clip on open. */
+        .nav-foot {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem 2.5rem;
+          margin-top: 2.5rem;
+        }
+        .nav-meta { overflow: hidden; }
+        .nav-meta-line {
+          display: inline-block;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #ededeb;
+        }
+        .nav-meta-label { color: rgba(237, 237, 235, 0.4); }
+
+        /* Hover preview, right of the words (desktop only): two equal 2:3
+           portrait frames side by side, matching the vertical event photos so
+           each shot shows uncropped while staying compact. */
+        .nav-image {
+          gap: 14px;
+          opacity: 0;
+          transition: opacity 350ms ease;
+        }
+        .nav-image[data-active="true"] { opacity: 1; }
+        .nav-photo {
+          position: relative;
+          flex: none;
+          width: 200px;
+          height: 300px;
+          overflow: hidden;
+        }
+
+        @media (min-width: 1024px) {
+          .nav-wrapper { justify-content: space-between; }
+          .nav-body { max-width: 1200px; margin-top: 2rem; }
+          .nav-link { font-size: 5vw; padding-right: 2vw; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .film-panel,
-          .word-link,
-          .seg,
-          .o-photo { transition: opacity 200ms ease; }
-          .word-link { transform: none !important; }
-          .o-photo { transform: translate(-50%, -50%) scale(1) !important; }
+          .label-track { transition: none; }
+          .nav-link, .nav-image { transition: opacity 200ms ease; }
         }
       `}</style>
-    </>
+    </div>
   );
 }

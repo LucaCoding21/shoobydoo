@@ -5,8 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { EVENT_BY_HOME_THUMB } from "@/data/events";
 import HamburgerMenu from "@/components/HamburgerMenu";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const RUSH_SLIDES = [
   { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
@@ -55,6 +58,14 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+// Module-scoped flag: persists across client-side navigations (going to an
+// /events/[slug] page and back remounts this component but keeps the same JS
+// runtime) yet resets on a hard refresh (new runtime). That gives us exactly
+// the desired behaviour — intro plays on every reload, skips on back-nav.
+// sessionStorage can't do this: it survives reloads too, so the intro would
+// never replay after the first visit.
+let introPlayed = false;
+
 export default function HeroSequence() {
   const containerRef = useRef<HTMLDivElement>(null);
   const rushLayerRef = useRef<HTMLDivElement>(null);
@@ -79,6 +90,11 @@ export default function HeroSequence() {
   // Index of the photo currently under the cursor (or null). Drives the HUD
   // swap from nav buttons → photo name + description.
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  // Gates pointer events on the corner [MENU] button. Flipped on at the same
+  // beat the menu starts its slide-up (settled+1.9) so it can't be clicked
+  // while still clipped out of view. Visual reveal itself is GSAP-driven, in
+  // the same tween as the nav logo — see the `introMask` wiring below.
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -100,7 +116,13 @@ export default function HeroSequence() {
     // Only lock scroll during the rush. Once the rush hands off ("reveal"),
     // let the user scroll even though the photo wipes / title slide-up are
     // still in flight — those animations don't care about scroll.
-    if (phase !== "rush") return;
+    if (phase !== "rush") {
+      // Scroll just unlocked: the page was overflow:hidden during the rush, so
+      // ScrollTrigger cached a zero scroll range. Re-measure so the third-row
+      // reveal triggers fire as the visitor scrolls down.
+      ScrollTrigger.refresh();
+      return;
+    }
     const prevHtml = document.documentElement.style.overflow;
     const prevBody = document.body.style.overflow;
     document.documentElement.style.overflow = "hidden";
@@ -184,12 +206,10 @@ export default function HeroSequence() {
       const otherGridItems = gridItems.filter((el) => el !== landingGridItem);
 
       const reduce = prefersReducedMotion();
-      // Skip the intro on repeat visits within the same browser session
-      // (e.g. navigating back to home from a gallery). Cleared automatically
-      // when the tab closes, so each new session still gets the full reveal.
-      const skipIntro =
-        typeof window !== "undefined" &&
-        window.sessionStorage.getItem("shoobydoo-intro-played") === "1";
+      // Skip the intro when we've already played it in this runtime — i.e. the
+      // user navigated to a gallery and came back. A hard refresh starts a new
+      // runtime, so `introPlayed` is false again and the intro replays.
+      const skipIntro = introPlayed;
       const rushDuration = isMobile ? 2.4 : 3.2;
       const ease = "power4.inOut";
       const initialClip = isMobile
@@ -201,6 +221,12 @@ export default function HeroSequence() {
       const scrollTarget = viewportCenter - slideCenter;
 
       const titleEl = titleRef.current!;
+      // The corner [MENU] button's label (rendered by HamburgerMenu, which sits
+      // inside this scope). Driven in the SAME tween as the title so the two
+      // wordmarks rise in perfect 1:1 sync. Queried rather than ref'd since it
+      // lives in a child component.
+      const menuLabel =
+        containerRef.current!.querySelector<HTMLElement>(".menu-label");
 
       gsap.set(frame, { clipPath: initialClip, force3D: true });
       gsap.set(track, { y: 0, force3D: true });
@@ -209,17 +235,64 @@ export default function HeroSequence() {
       // 120% (not 100%) because the wrapper's 0.2em paddingBottom expands the
       // clip box past the span — at yPercent:100 the top ~20% of letters peek out.
       gsap.set(titleEl, { yPercent: 120, visibility: "visible" });
+      if (menuLabel) gsap.set(menuLabel, { yPercent: 120, visibility: "visible" });
       gsap.set(swordRef.current, { opacity: 0 });
 
       if (reduce || skipIntro) {
         gsap.set(rushLayer, { display: "none" });
         gsap.set([grid, ...gridItems], { opacity: 1, scale: 1, x: 0, y: 0 });
         gsap.set(titleEl, { yPercent: 0 });
+        if (menuLabel) gsap.set(menuLabel, { yPercent: 0, visibility: "visible" });
         gsap.set(swordRef.current, { opacity: 0.15 });
         setPhase("done");
         setCanHover(true);
+        setShowMenu(true);
+        introPlayed = true;
         return;
       }
+
+      // Directional clip-path wipes, shared by the intro reveal (top rows) and
+      // the scroll-triggered reveal (below-fold rows) set up just below.
+      const WIPES = [
+        "inset(0% 100% 0% 0%)", // left-to-right
+        "inset(0% 0% 0% 100%)", // right-to-left
+        "inset(100% 0% 0% 0%)", // bottom-to-top
+        "inset(0% 0% 100% 0%)", // top-to-bottom
+        "inset(0% 0% 0% 100%)", // right-to-left
+        "inset(0% 100% 0% 0%)", // left-to-right
+        "inset(0% 0% 100% 0%)", // top-to-bottom
+      ];
+      const TARGET = "inset(0% 0% 0% 0%)";
+
+      // Split the non-landing thumbs by whether they sit in the opening fold.
+      // The grid is centred in a 149vh section, so the third row lives ~107vh
+      // down — well below the fold. Measured here, before anything moves and
+      // while scroll is still pinned at the top, so the split reflects what the
+      // visitor can actually see. Rows in view wipe as part of the intro; the
+      // rest are held clipped and wipe in only when scrolled into view.
+      const foldLine = window.innerHeight * 0.95;
+      const introItems: HTMLDivElement[] = [];
+      const scrollItems: HTMLDivElement[] = [];
+      otherGridItems.forEach((item) => {
+        const inFold = item.getBoundingClientRect().top < foldLine;
+        (inFold ? introItems : scrollItems).push(item);
+      });
+
+      // Below-the-fold thumbs: same clip-path wipe, fired by scroll position
+      // rather than the intro timeline. once:true so they don't replay on
+      // scroll-back. Created here (not inside the timeline's hand-off call) so
+      // useGSAP's context owns and cleans up these ScrollTriggers on unmount.
+      scrollItems.forEach((item, idx) => {
+        const from = WIPES[idx % WIPES.length];
+        gsap.set(item, { opacity: 1, clipPath: from, WebkitClipPath: from });
+        gsap.to(item, {
+          clipPath: TARGET,
+          WebkitClipPath: TARGET,
+          duration: 1.2,
+          ease: "power3.inOut",
+          scrollTrigger: { trigger: item, start: "top 82%", once: true },
+        });
+      });
 
       const tl = gsap.timeline();
 
@@ -254,20 +327,11 @@ export default function HeroSequence() {
             ease: "power3.inOut",
           });
 
-          // 7 wipe directions for the 7 non-landing thumbs (4x2 grid minus landing).
-          const WIPES = [
-            "inset(0% 100% 0% 0%)", // left-to-right
-            "inset(0% 0% 0% 100%)", // right-to-left
-            "inset(100% 0% 0% 0%)", // bottom-to-top
-            "inset(0% 0% 100% 0%)", // top-to-bottom
-            "inset(0% 0% 0% 100%)", // right-to-left
-            "inset(0% 100% 0% 0%)", // left-to-right
-            "inset(0% 0% 100% 0%)", // top-to-bottom
-          ];
-          const TARGET = "inset(0% 0% 0% 0%)";
+          // In-fold thumbs (the top rows) wipe now, as part of the intro; the
+          // third row is held clipped and revealed on scroll (scrollItems above).
           // Wipes start early in the morph so the reveal feels in sync.
           const wipeStart = 0.75;
-          otherGridItems.forEach((item, idx) => {
+          introItems.forEach((item, idx) => {
             const from = WIPES[idx % WIPES.length];
             gsap.set(item, {
               opacity: 1,
@@ -289,9 +353,10 @@ export default function HeroSequence() {
 
       // Mask + slide: title rises after the photo wipes finish (wipes end at
       // settled+1.85). settled+3.2 gives the grid ~1.35s of breathing room before
-      // the title comes in, so the two reveals don't fight for attention.
+      // the title comes in, so the two reveals don't fight for attention. The
+      // corner [MENU] label is animated in the SAME tween for an exact 1:1 sync.
       tl.to(
-        titleEl,
+        menuLabel ? [titleEl, menuLabel] : titleEl,
         {
           yPercent: 0,
           duration: 2.3,
@@ -299,6 +364,8 @@ export default function HeroSequence() {
         },
         "settled+=1.9",
       );
+      // Enable clicks on the menu the instant it starts revealing.
+      tl.call(() => setShowMenu(true), [], "settled+=1.9");
 
       // Fade sword in starting just before settled — by the time the rush layer
       // hands off, the sword is already at full opacity so it reads as if it
@@ -316,7 +383,7 @@ export default function HeroSequence() {
       tl.call(() => setCanHover(true), [], "settled+=3.25");
       tl.call(() => {
         setPhase("done");
-        window.sessionStorage.setItem("shoobydoo-intro-played", "1");
+        introPlayed = true;
       }, [], "settled+=4.4");
     },
     { scope: containerRef, dependencies: [isReady] },
@@ -365,26 +432,32 @@ export default function HeroSequence() {
           />
         </div>
 
-        {/* Title — masked slide-up reveal. Sits as a small logo at the top
-            center of the viewport. Outer div is positioner + mask; inner
-            span is what slides up under GSAP control. */}
-        <div
-          className="absolute overflow-hidden text-[#ededeb] pointer-events-none select-none leading-none"
-          style={{
-            top: "1.75rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            paddingBottom: "0.2em",
-            fontFamily: "var(--font-fraunces), Georgia, serif",
-            fontWeight: 400,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            // opsz 144 = display cut: more dramatic contrast, sharper details
-            fontVariationSettings: "'opsz' 144, 'SOFT' 100",
-            fontSize: isMobile ? "clamp(0.9rem, 4vw, 1.25rem)" : "clamp(1rem, 1.5vw, 1.5rem)",
-            whiteSpace: "nowrap",
-          }}
-        >
+      </div>
+
+      {/* Title — fixed top-centre logo: the homepage's animated counterpart to
+          the static SiteWordmark used on other pages (same position + type so
+          the logo reads identically). Outer div is the positioner + slide-up
+          mask; the inner span is what GSAP drives. Wrapped in a Link so the
+          logo navigates home. At z-40 so the open nav panel covers it — the
+          menu shows its own left-aligned logo instead. */}
+      <div
+        className="fixed overflow-hidden text-[#ededeb] select-none leading-none z-40"
+        style={{
+          top: "1.75rem",
+          left: "50%",
+          transform: "translateX(-50%)",
+          paddingBottom: "0.2em",
+          fontFamily: "var(--font-fraunces), Georgia, serif",
+          fontWeight: 400,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          // opsz 144 = display cut: more dramatic contrast, sharper details
+          fontVariationSettings: "'opsz' 144, 'SOFT' 100",
+          fontSize: isMobile ? "clamp(0.9rem, 4vw, 1.25rem)" : "clamp(1rem, 1.5vw, 1.5rem)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <Link href="/" aria-label="Shoobydoo — home" className="inline-block">
           <span
             ref={titleRef}
             className="title-mask-initial"
@@ -395,7 +468,7 @@ export default function HeroSequence() {
           >
             Shoobydoo
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
@@ -573,14 +646,12 @@ export default function HeroSequence() {
         </div>
       </div>
 
-      {/* Persistent corner menu — fades in once the intro finishes (canHover).
-          The component positions itself fixed to the viewport. */}
-      <div
-        className={`transition-opacity duration-500 ${
-          canHover ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <HamburgerMenu />
+      {/* Persistent corner menu. `introMask` makes the [MENU] label start
+          clipped + hidden so this component's timeline can rise it in lock-step
+          with the nav logo (same tween). pointer-events stay off until that
+          reveal begins (showMenu). The component positions itself fixed. */}
+      <div className={showMenu ? "" : "pointer-events-none"}>
+        <HamburgerMenu introMask />
       </div>
     </section>
   );
