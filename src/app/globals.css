@@ -97,3 +97,83 @@ body:has(.photo-grid .group:hover) .dim-overlay {
 .hud-fallback:hover {
   transform: scale(1.08);
 }
+
+/* ── Sharingan custom cursor ────────────────────────────────────────────────
+   When active (fine pointer only), hide the native cursor everywhere. The class
+   is added to <html> by CustomCursor on mount, so SSR / touch devices keep the
+   normal cursor and there's no flash of a hidden pointer before JS runs. */
+.sharingan-cursor-active,
+.sharingan-cursor-active * {
+  cursor: none !important;
+}
+
+/* Root follower: positioned via transform on the JS side. The spinner is shifted
+   by -50% so the artwork is centered on the actual pointer tip. */
+.sharingan-cursor {
+  width: 0;
+  height: 0;
+  will-change: transform;
+  transition: opacity 150ms ease-out;
+}
+
+.sharingan-cursor__spinner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+/* Hover-in plays one 1s rotation. Because the class is removed + re-added with
+   a forced reflow on every interactive enter, the spin replays each time.
+   Easing is an asymmetric ease — gentle start, fast through the middle, then a
+   long slow deceleration into the stop (slow → fast → slow). */
+.sharingan-cursor__spinner.is-pointer {
+  animation: sharingan-spin 1s cubic-bezier(0.5, 0, 0.1, 1);
+}
+
+@keyframes sharingan-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.sharingan-cursor__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: opacity 1s cubic-bezier(0.5, 0, 0.1, 1);
+}
+
+/* Crossfade: normal Sharingan fades out, Mangekyo fades in, in lock-step with
+   the 1s spin so it reads as "spins and turns into the pointer". */
+.sharingan-cursor__img--normal {
+  background-image: url("/cursor/sharingan.webp");
+  opacity: 1;
+}
+.sharingan-cursor__img--pointer {
+  background-image: url("/cursor/mangekyo.png");
+  opacity: 0;
+}
+.sharingan-cursor__spinner.is-pointer .sharingan-cursor__img--normal {
+  opacity: 0;
+}
+.sharingan-cursor__spinner.is-pointer .sharingan-cursor__img--pointer {
+  opacity: 1;
+}
+
+/* Respect reduced-motion: skip the spin, keep the crossfade subtle. */
+@media (prefers-reduced-motion: reduce) {
+  .sharingan-cursor__spinner.is-pointer {
+    animation: none;
+  }
+}

@@ -11,12 +11,25 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
+// Photos that rush past during the intro. The optimized /thumbnails are
+// interleaved with a handful of full-size event-gallery shots so the rush
+// rotates through more variety than the 6 grid thumbnails alone. Next.js
+// downscales each to ~20vw, so the larger source files don't cost much.
+// IMPORTANT: the LAST entry must be the landing photo (LANDING_SRC) — on
+// mobile the rush column morphs its final slide into the grid, and that
+// measurement assumes the last slide is the landing thumbnail.
 const RUSH_SLIDES = [
   { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
+  { src: "/events/insomnia-2026/_7R46204-Enhanced-NR.jpg", alt: "Insomnia 2026" },
   { src: "/thumbnails/viperactive-harbour.jpg", alt: "viperactive at Harbour" },
+  { src: "/events/nghtmre/_DSC9126-Enhanced-NR.jpg", alt: "NGHTMRE at Harbour" },
   { src: "/thumbnails/insomnia-2026.jpg", alt: "Insomnia 2026" },
+  { src: "/events/restricted/7R403147-Enhanced-NR.jpg", alt: "Restricted at Harbour" },
   { src: "/thumbnails/restricted-harbour.jpg", alt: "Restricted at Harbour" },
+  { src: "/events/viperactive/_7R48078-Enhanced-NR.jpg", alt: "viperactive at Harbour" },
   { src: "/thumbnails/phrva-village-studios.jpg", alt: "PHRVA at Village Studios" },
+  { src: "/events/insomnia-2025/_DSC3556-Enhanced-NR.jpg", alt: "Insomnia 2025" },
+  { src: "/events/insomnia-2026/_7R46714.jpg", alt: "Insomnia 2026" },
   { src: "/thumbnails/insomnia-2025.jpg", alt: "Insomnia 2025" },
 ] as const;
 
@@ -53,6 +66,80 @@ const GRID = [
   { src: "/thumbnails/insomnia-2025.jpg", alt: "Insomnia 2025" },
 ] as const;
 
+// Desktop rush column motion. Shared between the initial inline transform (so
+// the first painted frame already matches the rush start — no jump when GSAP
+// takes over after the fonts load) and the GSAP timeline itself. `travel` is
+// RUSH_TRAVEL_VH% of the viewport height; each column eases from `start` to
+// `end` (as fractions of travel). Columns 1 & 3 net upward, column 2 downward —
+// the up / down / up rhythm. Stagger keeps the three off the same row.
+const RUSH_TRAVEL_VH = 260;
+const RUSH_COLS = [
+  { offset: 0, start: 0.6, end: -0.6 },
+  { offset: 2, start: -0.6, end: 0.6 },
+  { offset: 4, start: 0.5, end: -0.7 },
+] as const;
+
+// Build a column's photo stack for the desktop 3-strip rush: rotate the slide
+// order by `offset` so adjacent columns don't show the same photo in the same
+// row, then double it so the column is always taller than the viewport plus the
+// scroll travel (no edge is ever exposed mid-rush).
+function rushColumn(offset: number) {
+  const rotated = RUSH_SLIDES.map(
+    (_, i) => RUSH_SLIDES[(i + offset) % RUSH_SLIDES.length],
+  );
+  return [...rotated, ...rotated];
+}
+
+// One vertical strip of the desktop rush. Taller than the viewport and
+// vertically centred (justify-center) so the GSAP transform on `trackRef` can
+// scroll it up or down without ever exposing a top/bottom edge.
+function RushColumn({
+  trackRef,
+  colIndex,
+}: {
+  trackRef: React.RefObject<HTMLDivElement | null>;
+  colIndex: number;
+}) {
+  const { offset, start } = RUSH_COLS[colIndex];
+  // Pre-position at the rush START offset on first paint (same value GSAP sets,
+  // expressed in vh) so the column doesn't jump to a different photo when the
+  // timeline takes over.
+  const startVh = RUSH_TRAVEL_VH * start;
+  return (
+    <div
+      className="relative flex flex-col justify-center overflow-hidden"
+      style={{ width: "30vh" }}
+    >
+      <div
+        ref={trackRef}
+        className="w-full flex flex-col items-center gap-[2vh]"
+        style={{
+          willChange: "transform",
+          transform: `translate3d(0, ${startVh}vh, 0)`,
+        }}
+      >
+        {rushColumn(offset).map((slide, i) => (
+          <div
+            key={`${offset}-${slide.src}-${i}`}
+            className="relative w-full flex-shrink-0 aspect-[2/3] overflow-hidden rounded-sm"
+          >
+            <Image
+              src={slide.src}
+              alt=""
+              aria-hidden
+              fill
+              priority={i < 2}
+              quality={90}
+              sizes="20vw"
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function prefersReducedMotion() {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -72,6 +159,12 @@ export default function HeroSequence() {
   const frameRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const landingRushRef = useRef<HTMLDivElement>(null);
+  // Desktop rush uses three side-by-side columns (mobile keeps the single
+  // `trackRef` column). One ref per column so the timeline can scroll each
+  // independently — up / down / up.
+  const strip1Ref = useRef<HTMLDivElement>(null);
+  const strip2Ref = useRef<HTMLDivElement>(null);
+  const strip3Ref = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const swordRef = useRef<HTMLDivElement>(null);
@@ -196,8 +289,6 @@ export default function HeroSequence() {
 
       const rushLayer = rushLayerRef.current!;
       const frame = frameRef.current!;
-      const track = trackRef.current!;
-      const landingRush = landingRushRef.current!;
       const grid = gridRef.current!;
       const gridItems = Array.from(grid.querySelectorAll<HTMLDivElement>(".grid-thumb"));
       const landingGridItem = gridItems.find(
@@ -210,15 +301,12 @@ export default function HeroSequence() {
       // user navigated to a gallery and came back. A hard refresh starts a new
       // runtime, so `introPlayed` is false again and the intro replays.
       const skipIntro = introPlayed;
-      const rushDuration = isMobile ? 2.4 : 3.2;
+      const rushDuration = isMobile ? 4.6 : 4.8;
       const ease = "power4.inOut";
+      // Mobile: one centred column. Desktop: a wider window for the 3 strips.
       const initialClip = isMobile
         ? "inset(15% 8% round 12px)"
-        : "inset(12% 32% round 14px)";
-
-      const slideCenter = landingRush.offsetTop + landingRush.offsetHeight / 2;
-      const viewportCenter = window.innerHeight / 2;
-      const scrollTarget = viewportCenter - slideCenter;
+        : "inset(10% 5% round 14px)";
 
       const titleEl = titleRef.current!;
       // The corner [MENU] button's label (rendered by HamburgerMenu, which sits
@@ -229,7 +317,6 @@ export default function HeroSequence() {
         containerRef.current!.querySelector<HTMLElement>(".menu-label");
 
       gsap.set(frame, { clipPath: initialClip, force3D: true });
-      gsap.set(track, { y: 0, force3D: true });
       gsap.set(grid, { opacity: 0 });
       gsap.set(gridItems, { opacity: 0 });
       // 120% (not 100%) because the wrapper's 0.2em paddingBottom expands the
@@ -264,7 +351,12 @@ export default function HeroSequence() {
       ];
       const TARGET = "inset(0% 0% 0% 0%)";
 
-      // Split the non-landing thumbs by whether they sit in the opening fold.
+      // Desktop crossfades the whole rush layer out, so the landing photo just
+      // wipes in like every other tile. Mobile still morphs the landing photo
+      // out of the rush column into its slot, so it's excluded from the wipes.
+      const wipeSource = isMobile ? otherGridItems : gridItems;
+
+      // Split the wipe thumbs by whether they sit in the opening fold.
       // The grid is centred in a 149vh section, so the third row lives ~107vh
       // down — well below the fold. Measured here, before anything moves and
       // while scroll is still pinned at the top, so the split reflects what the
@@ -273,7 +365,7 @@ export default function HeroSequence() {
       const foldLine = window.innerHeight * 0.95;
       const introItems: HTMLDivElement[] = [];
       const scrollItems: HTMLDivElement[] = [];
-      otherGridItems.forEach((item) => {
+      wipeSource.forEach((item) => {
         const inFold = item.getBoundingClientRect().top < foldLine;
         (inFold ? introItems : scrollItems).push(item);
       });
@@ -297,40 +389,80 @@ export default function HeroSequence() {
       const tl = gsap.timeline();
 
       // Act 1 — Rush
-      tl.to(track, { y: scrollTarget, duration: rushDuration, ease }, 0);
+      if (isMobile) {
+        // Single centred column scrolls up until the landing photo is centred.
+        const track = trackRef.current!;
+        const landingRush = landingRushRef.current!;
+        const slideCenter = landingRush.offsetTop + landingRush.offsetHeight / 2;
+        const scrollTarget = window.innerHeight / 2 - slideCenter;
+        gsap.set(track, { y: 0, force3D: true });
+        tl.to(track, { y: scrollTarget, duration: rushDuration, ease }, 0);
+      } else {
+        // Three columns rush at once: outer two upward, middle one downward —
+        // an up / down / up rhythm. Each column is taller than the viewport and
+        // vertically centred, so translating it by a fraction of a screen never
+        // exposes an edge. Start/end offsets are staggered so the columns don't
+        // show the same row at the same moment.
+        // Start/end offsets and travel come from RUSH_COLS so they match the
+        // inline transform RushColumn paints on first load (no jump). The columns
+        // are far taller than `travel`, so neither end ever exposes an edge.
+        const strips = [strip1Ref.current!, strip2Ref.current!, strip3Ref.current!];
+        const travel = window.innerHeight * (RUSH_TRAVEL_VH / 100);
+        strips.forEach((strip, i) => {
+          gsap.set(strip, { y: travel * RUSH_COLS[i].start, force3D: true });
+          tl.to(strip, { y: travel * RUSH_COLS[i].end, duration: rushDuration, ease }, 0);
+        });
+      }
       tl.to(frame, { clipPath: "inset(0%)", duration: rushDuration, ease }, 0);
 
-      // Trigger the hand-off slightly before the rush technically ends, so the morph
-      // absorbs the rush's deceleration tail instead of waiting for it to fully stop.
+      // Trigger the hand-off slightly before the rush technically ends, so the
+      // hand-off absorbs the rush's deceleration tail instead of waiting for it
+      // to fully stop.
       tl.addLabel("settled", rushDuration - 0.4);
 
-      // Hand-off: measure the landing grid item's natural position and morph from rush-end position.
+      // Hand-off to the grid.
       tl.call(
         () => {
-          const rushRect = landingRush.getBoundingClientRect();
-          const gridRect = landingGridItem.getBoundingClientRect();
-          const dx =
-            rushRect.left + rushRect.width / 2 - (gridRect.left + gridRect.width / 2);
-          const dy =
-            rushRect.top + rushRect.height / 2 - (gridRect.top + gridRect.height / 2);
-          const scale = rushRect.height / gridRect.height;
+          if (isMobile) {
+            // Morph: measure the landing grid item's natural slot and fly the
+            // rush-end photo into it.
+            const landingRush = landingRushRef.current!;
+            const rushRect = landingRush.getBoundingClientRect();
+            const gridRect = landingGridItem.getBoundingClientRect();
+            const dx =
+              rushRect.left + rushRect.width / 2 - (gridRect.left + gridRect.width / 2);
+            const dy =
+              rushRect.top + rushRect.height / 2 - (gridRect.top + gridRect.height / 2);
+            const scale = rushRect.height / gridRect.height;
 
-          gsap.set(landingGridItem, { x: dx, y: dy, scale, opacity: 1, transformOrigin: "center center" });
-          gsap.set(rushLayer, { display: "none" });
-          gsap.set(grid, { opacity: 1 });
+            gsap.set(landingGridItem, { x: dx, y: dy, scale, opacity: 1, transformOrigin: "center center" });
+            gsap.set(rushLayer, { display: "none" });
+            gsap.set(grid, { opacity: 1 });
 
-          gsap.to(landingGridItem, {
-            x: 0,
-            y: 0,
-            scale: 1,
-            duration: 1.2,
-            ease: "power3.inOut",
-          });
+            gsap.to(landingGridItem, {
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: 1.2,
+              ease: "power3.inOut",
+            });
+          } else {
+            // Crossfade: reveal the grid underneath, then dissolve the still-
+            // moving rush layer over it.
+            gsap.set(grid, { opacity: 1 });
+            gsap.to(rushLayer, {
+              opacity: 0,
+              duration: 0.8,
+              ease: "power2.out",
+              onComplete: () => gsap.set(rushLayer, { display: "none" }),
+            });
+          }
 
           // In-fold thumbs (the top rows) wipe now, as part of the intro; the
           // third row is held clipped and revealed on scroll (scrollItems above).
-          // Wipes start early in the morph so the reveal feels in sync.
-          const wipeStart = 0.75;
+          // On desktop the wipe starts almost immediately so the grid is already
+          // resolving as the rush fades; on mobile it trails the morph slightly.
+          const wipeStart = isMobile ? 0.75 : 0.2;
           introItems.forEach((item, idx) => {
             const from = WIPES[idx % WIPES.length];
             gsap.set(item, {
@@ -597,52 +729,62 @@ export default function HeroSequence() {
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          RUSH OVERLAY — fixed-to-viewport intro animation. Stays put while
-          its inner track scrolls and its frame clip-path opens up. Hidden
-          (display:none) once the rush hands off to the grid reveal.
+          RUSH OVERLAY — fixed-to-viewport intro animation. Stays put while its
+          inner column(s) scroll and its frame clip-path opens up. Mobile uses a
+          single centred column (which morphs its last photo into the grid);
+          desktop uses three columns rushing up/down/up that crossfade out to
+          reveal the grid. Hidden (display:none) once the hand-off completes.
           ════════════════════════════════════════════════════════════════════ */}
       <div ref={rushLayerRef} className="fixed inset-0 z-30">
         <div
           ref={frameRef}
           className="absolute inset-0"
           style={{
-            clipPath: "inset(12% 32% round 14px)",
-            WebkitClipPath: "inset(12% 32% round 14px)",
+            clipPath: isMobile
+              ? "inset(15% 8% round 12px)"
+              : "inset(10% 5% round 14px)",
+            WebkitClipPath: isMobile
+              ? "inset(15% 8% round 12px)"
+              : "inset(10% 5% round 14px)",
             willChange: "clip-path",
           }}
         >
-          <div
-            ref={trackRef}
-            className="absolute inset-x-0 top-0 flex flex-col items-center"
-            style={{ willChange: "transform" }}
-          >
-            <div className="w-full h-screen flex-shrink-0" aria-hidden />
-            {RUSH_SLIDES.map((slide, i) => {
-              const isLast = i === RUSH_SLIDES.length - 1;
-              return (
-                <div
-                  key={slide.src}
-                  ref={isLast ? landingRushRef : undefined}
-                  className="relative flex-shrink-0 mt-[5vh]"
-                  style={
-                    isMobile
-                      ? { width: "92vw", aspectRatio: "2 / 3" }
-                      : { height: "82vh", aspectRatio: "2 / 3" }
-                  }
-                >
-                  <Image
-                    src={slide.src}
-                    alt={slide.alt}
-                    fill
-                    priority={i < 3 || isLast}
-                    quality={95}
-                    sizes={isMobile ? "92vw" : "55vh"}
-                    style={{ objectFit: "cover" }}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          {isMobile ? (
+            <div
+              ref={trackRef}
+              className="absolute inset-x-0 top-0 flex flex-col items-center"
+              style={{ willChange: "transform" }}
+            >
+              <div className="w-full h-screen flex-shrink-0" aria-hidden />
+              {RUSH_SLIDES.map((slide, i) => {
+                const isLast = i === RUSH_SLIDES.length - 1;
+                return (
+                  <div
+                    key={slide.src}
+                    ref={isLast ? landingRushRef : undefined}
+                    className="relative flex-shrink-0 mt-[5vh]"
+                    style={{ width: "92vw", aspectRatio: "2 / 3" }}
+                  >
+                    <Image
+                      src={slide.src}
+                      alt={slide.alt}
+                      fill
+                      priority={i < 3 || isLast}
+                      quality={95}
+                      sizes="92vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-stretch justify-center gap-[2.5vw]">
+              <RushColumn trackRef={strip1Ref} colIndex={0} />
+              <RushColumn trackRef={strip2Ref} colIndex={1} />
+              <RushColumn trackRef={strip3Ref} colIndex={2} />
+            </div>
+          )}
         </div>
       </div>
 

@@ -26,7 +26,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: "Connect",
     links: [
       { label: "Instagram", href: "https://instagram.com/shoobydoofruitsnacks" },
-      { label: "TikTok", href: "https://tiktok.com/@shoobydoo" },
       { label: "Email", href: "mailto:shubhammohapatra24@gmail.com" },
     ],
   },
