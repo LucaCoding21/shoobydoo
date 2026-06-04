@@ -8,6 +8,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { EVENT_BY_HOME_THUMB } from "@/data/events";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import { onIntroGateOpen } from "@/lib/introGate";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -34,6 +35,11 @@ const RUSH_SLIDES = [
 ] as const;
 
 const LANDING_SRC = "/thumbnails/insomnia-2025.jpg";
+
+// The rush is the first thing revealed when the preloader curtain lifts, so the
+// Preloader warms exactly these sources (at the rush's render sizes) to decode
+// them before the hand-off — single source of truth so the two never drift.
+export const RUSH_SLIDE_SRCS = RUSH_SLIDES.map((s) => s.src);
 
 // Per-photo metadata shown under each tile on hover. Keyed by src so the
 // repeated thumbnails in GRID stay in sync. Tagline format is "Venue · Date" —
@@ -175,6 +181,10 @@ export default function HeroSequence() {
   const [phase, setPhase] = useState<"rush" | "reveal" | "done">("rush");
   const [isMobile, setIsMobile] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  // The rush doesn't begin until the 0→100 preloader lifts away. On a hard load
+  // this opens when the curtain starts its exit; on client-nav (gate already
+  // open) it resolves synchronously, so nothing waits. See lib/introGate.
+  const [gateOpen, setGateOpen] = useState(false);
   // Photos are not hoverable during the intro: while the rush + wipes are
   // running there's no real photo under the cursor yet, so showing the corner
   // brackets over an unrevealed tile reads as broken. Flipped to true 1s after
@@ -204,6 +214,9 @@ export default function HeroSequence() {
 
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Hold the intro until the preloader opens the gate.
+  useEffect(() => onIntroGateOpen(() => setGateOpen(true)), []);
 
   useEffect(() => {
     // Only lock scroll during the rush. Once the rush hands off ("reveal"),
@@ -284,7 +297,7 @@ export default function HeroSequence() {
 
   useGSAP(
     () => {
-      if (!isReady || hasRunRush.current) return;
+      if (!isReady || !gateOpen || hasRunRush.current) return;
       hasRunRush.current = true;
 
       const rushLayer = rushLayerRef.current!;
@@ -301,7 +314,7 @@ export default function HeroSequence() {
       // user navigated to a gallery and came back. A hard refresh starts a new
       // runtime, so `introPlayed` is false again and the intro replays.
       const skipIntro = introPlayed;
-      const rushDuration = isMobile ? 4.6 : 4.8;
+      const rushDuration = isMobile ? 3.0 : 3.2;
       const ease = "power4.inOut";
       // Mobile: one centred column. Desktop: a wider window for the 3 strips.
       const initialClip = isMobile
@@ -518,7 +531,7 @@ export default function HeroSequence() {
         introPlayed = true;
       }, [], "settled+=4.4");
     },
-    { scope: containerRef, dependencies: [isReady] },
+    { scope: containerRef, dependencies: [isReady, gateOpen] },
   );
 
   return (

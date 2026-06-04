@@ -120,17 +120,18 @@ body:has(.photo-grid .group:hover) .dim-overlay {
   position: absolute;
   left: 0;
   top: 0;
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   transform: translate(-50%, -50%);
   transform-origin: 50% 50%;
 }
 
-/* Hover-in plays one 1s rotation. Because the class is removed + re-added with
-   a forced reflow on every interactive enter, the spin replays each time.
-   Easing is an asymmetric ease — gentle start, fast through the middle, then a
-   long slow deceleration into the stop (slow → fast → slow). */
-.sharingan-cursor__spinner.is-pointer {
+/* A click plays one 1s rotation while crossfading to the Mangekyo, then settles
+   back to the normal Sharingan. The class is removed + re-added with a forced
+   reflow on every pointerdown so it replays on each click, and is cleared by a
+   timer afterward. Easing is an asymmetric ease — gentle start, fast through the
+   middle, then a long slow deceleration into the stop (slow → fast → slow). */
+.sharingan-cursor__spinner.is-active {
   animation: sharingan-spin 1s cubic-bezier(0.5, 0, 0.1, 1);
 }
 
@@ -155,7 +156,7 @@ body:has(.photo-grid .group:hover) .dim-overlay {
 }
 
 /* Crossfade: normal Sharingan fades out, Mangekyo fades in, in lock-step with
-   the 1s spin so it reads as "spins and turns into the pointer". */
+   the 1s spin so it reads as "spins and turns into the Mangekyo". */
 .sharingan-cursor__img--normal {
   background-image: url("/cursor/sharingan.webp");
   opacity: 1;
@@ -164,16 +165,100 @@ body:has(.photo-grid .group:hover) .dim-overlay {
   background-image: url("/cursor/mangekyo.png");
   opacity: 0;
 }
-.sharingan-cursor__spinner.is-pointer .sharingan-cursor__img--normal {
+.sharingan-cursor__spinner.is-active .sharingan-cursor__img--normal {
   opacity: 0;
 }
-.sharingan-cursor__spinner.is-pointer .sharingan-cursor__img--pointer {
+.sharingan-cursor__spinner.is-active .sharingan-cursor__img--pointer {
   opacity: 1;
 }
 
 /* Respect reduced-motion: skip the spin, keep the crossfade subtle. */
 @media (prefers-reduced-motion: reduce) {
-  .sharingan-cursor__spinner.is-pointer {
+  .sharingan-cursor__spinner.is-active {
     animation: none;
+  }
+}
+
+/* ── 0→100 preloader ───────────────────────────────────────────────────────
+   First-load curtain (see Preloader.tsx). Counts up in the Fraunces display cut
+   over the brand black, then lifts up to reveal the hero. Sits below the custom
+   cursor (z-99999) so the Sharingan still tracks over it. Skipped on client-nav
+   and under reduced-motion. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0e0f12;
+  color: #ededeb;
+  transform: translateY(0);
+  /* Curtain lift — a firm ease-in-out so it accelerates up and settles. */
+  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.preloader.is-leaving {
+  transform: translateY(-100%);
+}
+
+.preloader__inner {
+  display: flex;
+  flex-direction: column;
+  width: min(82vw, 640px);
+  gap: clamp(0.9rem, 2vw, 1.4rem);
+  opacity: 1;
+  transition: opacity 280ms ease-out;
+}
+.preloader__inner.is-out {
+  opacity: 0;
+}
+
+/* Small wordmark, top-left of the block — the static echo of the hero logo. */
+.preloader__wordmark {
+  align-self: flex-start;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  color: #ededeb;
+  opacity: 0.6;
+}
+
+/* The big counter, right-aligned so its edge stays put as digits change. */
+.preloader__count {
+  align-self: flex-end;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  font-size: clamp(5rem, 18vw, 11rem);
+  line-height: 0.85;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline progress track + fill, scaled left→right via inline transform. */
+.preloader__bar {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: rgba(237, 237, 235, 0.16);
+  overflow: hidden;
+}
+.preloader__fill {
+  position: absolute;
+  inset: 0;
+  background: #ededeb;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 120ms linear;
+}
+
+/* No curtain at all when motion is reduced — the Preloader returns null, but
+   guard the styles too in case it's ever rendered. */
+@media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
   }
 }

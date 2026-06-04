@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Sharingan cursor. Replaces the native pointer with the three-tomoe Sharingan
- * and, when hovering anything interactive, spins for 0.3s and crossfades into the
- * Mangekyo Sharingan (the "pointer" state).
+ * Sharingan cursor. Replaces the native pointer with the three-tomoe Sharingan.
+ * Clicking plays a one-shot spin that crossfades into the Mangekyo Sharingan and
+ * then settles back to the normal Sharingan.
  *
  * Why a JS follower instead of `cursor: url(...)`: native CSS cursors are static
  * images — they can't spin or crossfade. So we hide the OS cursor and track the
@@ -17,10 +17,6 @@ import { useEffect, useRef } from "react";
  *  - Hover state flips a className on the spinner via event delegation; it only
  *    changes when crossing an interactive boundary, so it's cheap.
  */
-
-// Anything that should trigger the Mangekyo "pointer" state on hover.
-const INTERACTIVE_SELECTOR =
-  'a, button, input, textarea, select, label, summary, [role="button"], [role="link"], [contenteditable="true"], [data-cursor="pointer"]';
 
 export default function CustomCursor() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -54,42 +50,30 @@ export default function CustomCursor() {
       root.style.opacity = "0";
     };
 
-    // Whether the element under the pointer is interactive.
-    const isInteractive = (target: EventTarget | null) =>
-      target instanceof Element && !!target.closest(INTERACTIVE_SELECTOR);
-
-    const over = (e: PointerEvent) => {
-      if (isInteractive(e.target) && !spinner.classList.contains("is-pointer")) {
-        // Re-trigger the spin keyframe from the top each time we enter.
-        spinner.classList.remove("is-pointer");
-        // Force reflow so the animation restarts even on rapid re-entry.
-        void spinner.offsetWidth;
-        spinner.classList.add("is-pointer");
-      }
-    };
-
-    const out = (e: PointerEvent) => {
-      // Only drop the pointer state when moving to something non-interactive
-      // (relatedTarget is where the pointer is heading).
-      if (
-        spinner.classList.contains("is-pointer") &&
-        !isInteractive(e.relatedTarget)
-      ) {
-        spinner.classList.remove("is-pointer");
-      }
+    // A click spins the Sharingan and morphs it into the Mangekyo, then settles
+    // back. Re-trigger the keyframe from the top on every press; a timer clears
+    // it after the 1s animation so the next press replays (and so it's robust
+    // under prefers-reduced-motion, where animationend never fires).
+    let revertTimer: ReturnType<typeof setTimeout> | undefined;
+    const down = () => {
+      clearTimeout(revertTimer);
+      spinner.classList.remove("is-active");
+      // Force reflow so the animation restarts even on rapid clicks.
+      void spinner.offsetWidth;
+      spinner.classList.add("is-active");
+      revertTimer = setTimeout(() => spinner.classList.remove("is-active"), 1000);
     };
 
     window.addEventListener("pointermove", move, { passive: true });
-    document.addEventListener("pointerover", over, { passive: true });
-    document.addEventListener("pointerout", out, { passive: true });
+    document.addEventListener("pointerdown", down, { passive: true });
     document.addEventListener("pointerleave", leaveWindow);
     window.addEventListener("blur", leaveWindow);
 
     return () => {
+      clearTimeout(revertTimer);
       document.documentElement.classList.remove("sharingan-cursor-active");
       window.removeEventListener("pointermove", move);
-      document.removeEventListener("pointerover", over);
-      document.removeEventListener("pointerout", out);
+      document.removeEventListener("pointerdown", down);
       document.removeEventListener("pointerleave", leaveWindow);
       window.removeEventListener("blur", leaveWindow);
     };
