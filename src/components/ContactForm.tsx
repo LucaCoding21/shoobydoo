@@ -5,7 +5,7 @@ import { useState } from "react";
 // Static-site contact form: on submit it composes a mailto: link and hands off
 // to the visitor's email client. No backend required. The sender's name + email
 // are folded into the body since a mailto: can't set the From address.
-const TO = "shubhammohapatra24@gmail.com";
+const TO = "shoobydoofruitsnacks@gmail.com";
 
 const fieldClass =
   "w-full bg-transparent border-b border-white/15 py-2 text-[#ededeb] " +

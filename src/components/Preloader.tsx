@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
 import { openIntroGate, isIntroGateOpen } from "@/lib/introGate";
-import { RUSH_SLIDE_SRCS } from "@/components/HeroSequence";
+import {
+  RUSH_SLIDE_SRCS,
+  MOBILE_RUSH_SLIDE_SRCS,
+} from "@/components/HeroSequence";
 
 /**
  * 0→100 first-load curtain. Counts up in the display serif over the brand black,
@@ -53,15 +56,16 @@ function warmRushImage(src: string, mobile: boolean): Promise<void> {
       // Mirror the hero rush's <Image> so getImageProps (the same internal
       // function <Image> uses) yields the identical srcSet/src → the warmed
       // bytes are the very ones the rush requests → a cache hit, no pop-in.
-      // Quality 95: the rush passes quality={90}, but that's not in next.config
-      // images.qualities ([75,95,100]) so Next serves it at 95 — we request 95
-      // directly to match the served URL and stay within the configured set.
+      // Desktop quality 95: the rush passes quality={90}, but that's not in
+      // next.config images.qualities ([75,95,100]) so Next serves it at 95 —
+      // we request 95 directly to match the served URL and stay within the
+      // configured set. Mobile rush renders at quality 75, so warm 75 there.
       const { props } = getImageProps({
         src,
         alt: "",
         fill: true,
         sizes: mobile ? "92vw" : "20vw",
-        quality: 95,
+        quality: mobile ? 75 : 95,
       });
       if (props.srcSet) img.srcset = props.srcSet;
       if (props.sizes) img.sizes = props.sizes;
@@ -107,7 +111,9 @@ export default function Preloader() {
     if (document.fonts?.ready) document.fonts.ready.then(() => (fontsReady = true));
     else fontsReady = true;
 
-    const srcs = Array.from(new Set(RUSH_SLIDE_SRCS));
+    const srcs = Array.from(
+      new Set(mobile ? MOBILE_RUSH_SLIDE_SRCS : RUSH_SLIDE_SRCS),
+    );
     const total = srcs.length;
     let loaded = 0;
     srcs.forEach((src) =>

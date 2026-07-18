@@ -78,15 +78,23 @@ const ART = lines.map((l) => l.slice(indent));
 
 const POOL = [".", ":", "-", "+", "*", "#"];
 
-export default function ContactAscii() {
+// Size/opacity are overridable so the contact page can render the signature
+// smaller on mobile (the full-size figure is wider than a phone viewport).
+export default function ContactAscii({
+  fontSize = "0.62rem",
+  opacity = 0.18,
+}: {
+  fontSize?: string;
+  opacity?: number;
+}) {
   return (
     <AsciiShimmer
       art={ART}
       pool={POOL}
       blank=" "
       align="left"
-      fontSize="0.62rem"
-      opacity={0.18}
+      fontSize={fontSize}
+      opacity={opacity}
     />
   );
 }

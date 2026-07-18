@@ -31,6 +31,16 @@ const POOL = [
   "⡷","⡿","⣷","⣾","⣽","⣻","⠟","⠿","⡻",
 ];
 
-export default function AsciiCat() {
-  return <AsciiShimmer art={BASE} pool={POOL} blank="⠀" align="right" />;
+// Size is overridable so the gallery can render the cat smaller on mobile,
+// where the full-size figure is wider than the phone viewport.
+export default function AsciiCat({ fontSize }: { fontSize?: string }) {
+  return (
+    <AsciiShimmer
+      art={BASE}
+      pool={POOL}
+      blank="⠀"
+      align="right"
+      fontSize={fontSize}
+    />
+  );
 }

@@ -93,8 +93,11 @@ export default async function EventGalleryPage({
             </dl>
           </div>
 
-          {/* ASCII cat — pushed to the bottom of the rail by mt-auto. */}
-          <div className="mt-auto">
+          {/* ASCII cat — pushed to the bottom of the rail by mt-auto. Desktop
+              only here: on mobile the rail sits above the photos, so the cat
+              would shove the photography down the page. It reappears after the
+              grid below. */}
+          <div className="mt-auto hidden lg:block">
             <AsciiCat />
           </div>
         </aside>
@@ -105,8 +108,22 @@ export default async function EventGalleryPage({
               Photos coming soon.
             </p>
           ) : (
-            <PhotoGallery photos={event.photos} eventTitle={event.title} />
+            <PhotoGallery
+              photos={event.photos}
+              eventTitle={event.title}
+              // Events whose thumbnail is a re-export of photos[0] must not
+              // prepend it again — the shot is already leading the grid.
+              leadPhoto={
+                event.thumbIsFirstPhoto ? undefined : event.homeThumbSrc
+              }
+            />
           )}
+
+          {/* Mobile sign-off — the rail cat, scaled to the phone width, sitting
+              at the end of the photos like a stamp. */}
+          <div className="mt-10 lg:hidden">
+            <AsciiCat fontSize="0.95rem" />
+          </div>
 
           {nextEvent && nextEvent.slug !== slug && (
             <Link

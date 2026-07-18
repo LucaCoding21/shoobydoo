@@ -88,15 +88,15 @@ export default function AboutPage() {
               entity: tweak `right-[…]` to move horizontally, `top-[…]` to move
               vertically, `h-[…vh]` to resize. Nothing else on the page moves.
               White line-work via the same invert + screen treatment as the footer. */}
-          <div className="relative mt-12 min-h-[46vh] lg:col-span-5 lg:mt-0 lg:min-h-[62vh]">
+          <div className="relative mt-6 min-h-[44vh] lg:col-span-5 lg:mt-0 lg:min-h-[62vh]">
             <Image
               src="/about-sword.png"
               alt=""
               aria-hidden
               width={1152}
               height={2048}
-              priority
-              className="pointer-events-none absolute right-[-30%] top-[60%] h-[84vh] w-auto max-w-none -translate-y-1/2 select-none lg:h-[102vh]"
+              preload
+              className="pointer-events-none absolute right-[-14%] top-[52%] h-[56vh] w-auto max-w-none -translate-y-1/2 select-none lg:right-[-30%] lg:top-[60%] lg:h-[102vh]"
               style={{ filter: "invert(1)", mixBlendMode: "screen", opacity: 0.28 }}
             />
           </div>
@@ -286,7 +286,7 @@ export default function AboutPage() {
           aria-hidden
           width={1152}
           height={2048}
-          className="pointer-events-none absolute -top-[6vh] right-[0vw] -z-0 hidden h-[85vh] w-auto select-none lg:block"
+          className="pointer-events-none absolute -z-0 top-[4vh] right-[-16vw] h-[52vh] w-auto max-w-none select-none lg:-top-[6vh] lg:right-[0vw] lg:h-[85vh]"
           style={{ filter: "invert(1)", mixBlendMode: "screen", opacity: 0.2 }}
         />
 

@@ -26,7 +26,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: "Connect",
     links: [
       { label: "Instagram", href: "https://instagram.com/shoobydoofruitsnacks" },
-      { label: "Email", href: "mailto:shubhammohapatra24@gmail.com" },
+      { label: "Email", href: "mailto:shoobydoofruitsnacks@gmail.com" },
     ],
   },
 ];
@@ -46,8 +46,10 @@ export default function Footer() {
         {/* Bottom-left corner — chained sword, rotated to arc diagonally across
             the corner rather than run straight down the left wall. Pivots from
             its bottom-left so the chain-heavy lower portion hugs the corner.
-            Hidden on small screens to keep the mobile layout clean. */}
-        <div className="absolute bottom-[50vh] left-[5vw] hidden aspect-[1152/2048] h-[105vh] max-h-[850px] origin-bottom-left rotate-[100deg] sm:block">
+            Mobile gets its own smaller sweep (the rotated blade spans roughly
+            the image height horizontally, so ~64vh clears a phone width and
+            bleeds off the right edge like the desktop composition). */}
+        <div className="absolute bottom-[42vh] left-[2vw] aspect-[1152/2048] h-[64vh] max-h-[540px] origin-bottom-left rotate-[100deg] sm:bottom-[50vh] sm:left-[5vw] sm:h-[105vh] sm:max-h-[850px]">
           <Image
             src="/footer/chained-sword.png"
             alt=""
@@ -63,8 +65,9 @@ export default function Footer() {
           />
         </div>
 
-        {/* Bottom-left corner — floral flourish, mirrored. */}
-        <div className="absolute bottom-[2vh] left-[-4vw] hidden aspect-[736/1308] h-[58vh] max-h-[585px] sm:block">
+        {/* Bottom-left corner — floral flourish, mirrored. Scaled down on
+            mobile so it reads as corner filigree, not a wall. */}
+        <div className="absolute bottom-[1vh] left-[-9vw] aspect-[736/1308] h-[40vh] max-h-[380px] sm:bottom-[2vh] sm:left-[-4vw] sm:h-[58vh] sm:max-h-[585px]">
           <Image
             src="/footer/flourish.png"
             alt=""
@@ -86,6 +89,16 @@ export default function Footer() {
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-16">
           {/* Brand */}
           <div className="max-w-xs">
+            {/* Logo mark — white linework (red Sharingan eyes preserved) on a
+                transparent background, so it drops straight onto the dark footer. */}
+            <Image
+              src="/logo.png"
+              alt="Shoobydoo"
+              width={661}
+              height={1418}
+              sizes="64px"
+              className="mb-5 h-auto w-[64px] select-none"
+            />
             <span
               className="block select-none text-2xl"
               style={{

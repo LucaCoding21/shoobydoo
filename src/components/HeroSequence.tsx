@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { EVENT_BY_HOME_THUMB } from "@/data/events";
+import { EVENT_BY_HOME_THUMB, EVENTS, type EventData } from "@/data/events";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { onIntroGateOpen } from "@/lib/introGate";
+import { beginEventTransition } from "@/lib/eventTransition";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -36,41 +38,57 @@ const RUSH_SLIDES = [
 
 const LANDING_SRC = "/thumbnails/insomnia-2025.jpg";
 
+// Mobile rushes a shorter column: phones pay full-viewport-width decode cost
+// per slide, and the 3s rush flies past too fast to register 12 distinct
+// photos anyway. Must still END on the landing slide — the morph into the
+// grid measures the last slide. Desktop keeps the full set for its 3 strips.
+const MOBILE_RUSH_SLIDES = [
+  ...RUSH_SLIDES.slice(0, 7),
+  RUSH_SLIDES[RUSH_SLIDES.length - 1],
+] as const;
+
 // The rush is the first thing revealed when the preloader curtain lifts, so the
 // Preloader warms exactly these sources (at the rush's render sizes) to decode
 // them before the hand-off — single source of truth so the two never drift.
 export const RUSH_SLIDE_SRCS = RUSH_SLIDES.map((s) => s.src);
+export const MOBILE_RUSH_SLIDE_SRCS = MOBILE_RUSH_SLIDES.map((s) => s.src);
 
-// Per-photo metadata shown under each tile on hover. Keyed by src so the
-// repeated thumbnails in GRID stay in sync. Tagline format is "Venue · Date" —
-// kept consistent so the same template works for concerts, festivals, and
-// future fashion/editorial galleries.
-const PHOTO_META: Record<string, { name: string; tagline: string }> = {
-  "/thumbnails/insomnia-2025.jpg":         { name: "INSOMNIA",    tagline: "Insomnia 2025" },
-  "/thumbnails/insomnia-2026.jpg":         { name: "INSOMNIA",    tagline: "Insomnia 2026" },
-  "/thumbnails/nghtmre-harbour.jpg":       { name: "NGHTMRE",     tagline: "Harbour 2025" },
-  "/thumbnails/viperactive-harbour.jpg":   { name: "VIPERACTIVE", tagline: "Harbour 2025" },
-  "/thumbnails/restricted-harbour.jpg":    { name: "RESTRICTED",  tagline: "Harbour 2025" },
-  "/thumbnails/phrva-village-studios.jpg": { name: "PHRVA",       tagline: "Village Studios 2025" },
-};
+// Grid + hover metadata are DERIVED from EVENTS so every event gets its own
+// unique tile (no repeats) and new events appear on the home page automatically
+// with no extra wiring here. Order follows EVENTS, except the landing photo is
+// pulled up to index 1 (top row) so the mobile intro morph always lands in view.
+const EVENT_LIST = Object.values(EVENTS) as EventData[];
 
-// Grid order, left-to-right, top-to-bottom. 4 across, 3 down = 12 slots.
-// Landing photo (insomnia-2025) sits at index 1 (top row, second from left) — close to center for a short morph.
-// Photos repeat to fill the 12 slots since only 6 unique thumbnails exist.
-const GRID = [
-  { src: "/thumbnails/phrva-village-studios.jpg", alt: "PHRVA at Village Studios" },
-  { src: "/thumbnails/insomnia-2025.jpg", alt: "Insomnia 2025" },
-  { src: "/thumbnails/viperactive-harbour.jpg", alt: "viperactive at Harbour" },
-  { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
-  { src: "/thumbnails/restricted-harbour.jpg", alt: "Restricted at Harbour" },
-  { src: "/thumbnails/insomnia-2026.jpg", alt: "Insomnia 2026" },
-  { src: "/thumbnails/phrva-village-studios.jpg", alt: "PHRVA at Village Studios" },
-  { src: "/thumbnails/viperactive-harbour.jpg", alt: "viperactive at Harbour" },
-  { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
-  { src: "/thumbnails/restricted-harbour.jpg", alt: "Restricted at Harbour" },
-  { src: "/thumbnails/insomnia-2026.jpg", alt: "Insomnia 2026" },
-  { src: "/thumbnails/insomnia-2025.jpg", alt: "Insomnia 2025" },
-] as const;
+// "NGHTMRE at Harbour" -> "NGHTMRE"; "INSOMNIA 2025" -> "INSOMNIA".
+function displayName(title: string): string {
+  return title.split(" at ")[0].replace(/\s+\d{4}$/, "").toUpperCase();
+}
+
+// Per-photo metadata shown under each tile on hover. Keyed by thumbnail src.
+// Tagline format is "Venue Date" — one template for concerts, festivals, and
+// future editorial galleries.
+const PHOTO_META: Record<string, { name: string; tagline: string }> =
+  Object.fromEntries(
+    EVENT_LIST.map((e) => [
+      e.homeThumbSrc,
+      { name: displayName(e.title), tagline: `${e.venue} ${e.date}` },
+    ]),
+  );
+
+// Grid order, left-to-right, top-to-bottom, `cols` across (4 desktop / 2 mobile).
+// The grid grows as many rows as needed and scrolls; the section height below
+// scales with the row count. Landing photo (LANDING_SRC) is placed at index 1.
+const GRID: { src: string; alt: string }[] = (() => {
+  const landing = EVENT_LIST.find((e) => e.homeThumbSrc === LANDING_SRC);
+  const others = EVENT_LIST.filter((e) => e.homeThumbSrc !== LANDING_SRC);
+  const ordered = landing
+    ? [others[0], landing, ...others.slice(1)].filter(Boolean)
+    : EVENT_LIST;
+  return (ordered as EventData[]).map((e) => ({
+    src: e.homeThumbSrc,
+    alt: e.title,
+  }));
+})();
 
 // Desktop rush column motion. Shared between the initial inline transform (so
 // the first painted frame already matches the rush start — no jump when GSAP
@@ -134,7 +152,7 @@ function RushColumn({
               alt=""
               aria-hidden
               fill
-              priority={i < 2}
+              preload={i < 2}
               quality={90}
               sizes="20vw"
               style={{ objectFit: "cover" }}
@@ -160,6 +178,7 @@ function prefersReducedMotion() {
 let introPlayed = false;
 
 export default function HeroSequence() {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const rushLayerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -538,7 +557,14 @@ export default function HeroSequence() {
     <section
       ref={containerRef}
       className="relative w-full bg-[#0e0f12]"
-      style={{ minHeight: isMobile ? "220vh" : "149vh" }}
+      // Height scales with the number of grid rows so every event tile is
+      // reachable by scrolling (4 tiles/row desktop, 2/row mobile). Calibrated
+      // so the original 3-row (desktop) / 6-row (mobile) layout is unchanged.
+      style={{
+        minHeight: isMobile
+          ? `${Math.ceil(GRID.length / 2) * 36 + 12}vh`
+          : `${Math.ceil(GRID.length / 4) * 48 + 5}vh`,
+      }}
       aria-label="Home"
     >
       {/* ════════════════════════════════════════════════════════════════════
@@ -573,7 +599,7 @@ export default function HeroSequence() {
             quality={100}
             sizes={isMobile ? "55vh" : "75vh"}
             style={{ objectFit: "contain" }}
-            priority
+            preload
           />
         </div>
 
@@ -634,17 +660,18 @@ export default function HeroSequence() {
         ref={gridRef}
         className={`photo-grid absolute inset-0 z-20 grid content-center justify-items-center ${
           isMobile
-            ? "grid-cols-2 grid-rows-6 gap-x-[4vw] gap-y-[7vh] px-[5vw] pt-[11vh] pb-[6vh]"
-            : "grid-cols-4 grid-rows-3 gap-x-[2.5vw] gap-y-[12vh] px-[6vw] pt-[11vh] pb-[6vh]"
+            ? "grid-cols-2 gap-x-[4vw] gap-y-[8vh] px-[5vw] pt-[11vh] pb-[8vh]"
+            : "grid-cols-4 gap-x-[2.5vw] gap-y-[12vh] px-[6vw] pt-[11vh] pb-[6vh]"
         } ${canHover ? "" : "pointer-events-none"}`}
         style={{ opacity: 0 }}
       >
         {GRID.map((thumb, idx) => {
           const eventSlug = EVENT_BY_HOME_THUMB[thumb.src];
+          const href = eventSlug ? `/events/${eventSlug}` : "/";
           return (
             <Link
               key={`${thumb.src}-${idx}`}
-              href={eventSlug ? `/events/${eventSlug}` : "/"}
+              href={href}
               prefetch={false}
               aria-label={`Open ${thumb.alt} gallery`}
               className="photo-card group relative aspect-[2/3] cursor-pointer hover:scale-[1.04] block"
@@ -652,8 +679,44 @@ export default function HeroSequence() {
               onMouseEnter={(e) => {
                 setHoveredIdx(idx);
                 handlePhotoEnter(e);
+                // Warm the destination route so the shared-element morph lands
+                // on an already-rendered page (tiles opt out of viewport
+                // prefetch; hover intent is the cheap middle ground).
+                if (eventSlug) router.prefetch(href);
               }}
               onMouseLeave={() => setHoveredIdx(null)}
+              onClick={(e) => {
+                // Shared-element transition — desktop, plain left-click, motion
+                // allowed. Everything else (mobile tap, cmd/ctrl/shift-click,
+                // reduced motion, overlay not mounted) falls through to the
+                // Link's default navigation.
+                if (
+                  isMobile ||
+                  !eventSlug ||
+                  prefersReducedMotion() ||
+                  e.metaKey ||
+                  e.ctrlKey ||
+                  e.shiftKey ||
+                  e.altKey ||
+                  e.button !== 0
+                )
+                  return;
+                const tile =
+                  e.currentTarget.querySelector<HTMLDivElement>(".grid-thumb");
+                const img = tile?.querySelector("img");
+                if (!tile || !img) return;
+                const r = tile.getBoundingClientRect();
+                // The layer owns the navigation from here: it pushes the route
+                // only once its scrim is fully opaque, so the page swap can
+                // never flash through.
+                const started = beginEventTransition({
+                  src: img.currentSrc || thumb.src,
+                  alt: thumb.alt,
+                  rect: { top: r.top, left: r.left, width: r.width, height: r.height },
+                  href,
+                });
+                if (started) e.preventDefault();
+              }}
             >
               {/* Photo container — GSAP animates this (wipes, morph, fade). The
                   `grid-thumb` class and `data-src` attribute are what the
@@ -667,20 +730,25 @@ export default function HeroSequence() {
                   src={thumb.src}
                   alt={thumb.alt}
                   fill
-                  quality={95}
+                  quality={isMobile ? 75 : 95}
                   sizes={isMobile ? "40vw" : "15vw"}
                   style={{ objectFit: "cover" }}
                 />
               </div>
-              {/* Per-photo hover label — sits just below the image. Two-line
+              {/* Per-photo label — sits just below the image. Two-line
                   hierarchy: name (large serif) above tagline (small caps,
-                  dimmed). Opacity driven by hoveredIdx so it can't appear
-                  during the intro and only one shows at a time.
-                  pointer-events-none so it never steals hover. */}
+                  dimmed). Desktop: opacity driven by hoveredIdx so it can't
+                  appear during the intro and only one shows at a time. Mobile
+                  has no hover, so every label fades in once the intro's photo
+                  wipes finish (canHover flips at the same beat) and stays —
+                  the tiles read as a captioned index of events, not anonymous
+                  photos. pointer-events-none so it never steals hover. */}
               <div
                 aria-hidden
-                className={`photo-label absolute left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap flex flex-col items-center gap-1.5 transition-opacity duration-300 ${
-                  canHover && hoveredIdx === idx ? "opacity-100" : "opacity-0"
+                className={`photo-label absolute left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap flex flex-col items-center gap-1.5 transition-opacity duration-700 ${
+                  canHover && (isMobile || hoveredIdx === idx)
+                    ? "opacity-100"
+                    : "opacity-0"
                 }`}
                 style={{ top: "calc(100% + 0.75rem)" }}
               >
@@ -690,8 +758,8 @@ export default function HeroSequence() {
                     fontWeight: 400,
                     fontVariationSettings: "'opsz' 144, 'SOFT' 100",
                     textTransform: "uppercase",
-                    letterSpacing: "0.16em",
-                    fontSize: isMobile ? "0.95rem" : "1.15rem",
+                    letterSpacing: isMobile ? "0.12em" : "0.16em",
+                    fontSize: isMobile ? "0.78rem" : "1.15rem",
                     color: "#ededeb",
                     lineHeight: 1,
                   }}
@@ -703,7 +771,7 @@ export default function HeroSequence() {
                     fontFamily: "Arial, Helvetica, sans-serif",
                     textTransform: "uppercase",
                     letterSpacing: "0.2em",
-                    fontSize: isMobile ? "0.6rem" : "0.7rem",
+                    fontSize: isMobile ? "0.55rem" : "0.7rem",
                     color: "#ededeb",
                     opacity: 0.55,
                     lineHeight: 1,
@@ -769,8 +837,8 @@ export default function HeroSequence() {
               style={{ willChange: "transform" }}
             >
               <div className="w-full h-screen flex-shrink-0" aria-hidden />
-              {RUSH_SLIDES.map((slide, i) => {
-                const isLast = i === RUSH_SLIDES.length - 1;
+              {MOBILE_RUSH_SLIDES.map((slide, i) => {
+                const isLast = i === MOBILE_RUSH_SLIDES.length - 1;
                 return (
                   <div
                     key={slide.src}
@@ -782,8 +850,8 @@ export default function HeroSequence() {
                       src={slide.src}
                       alt={slide.alt}
                       fill
-                      priority={i < 3 || isLast}
-                      quality={95}
+                      preload={i < 3 || isLast}
+                      quality={75}
                       sizes="92vw"
                       style={{ objectFit: "cover" }}
                     />

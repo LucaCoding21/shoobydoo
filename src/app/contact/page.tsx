@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 // Direct channels mirrored from the site footer so the brand stays consistent.
 const CHANNELS: { label: string; value: string; href: string; external?: boolean }[] = [
-  { label: "Email", value: "shubhammohapatra24@gmail.com", href: "mailto:shubhammohapatra24@gmail.com" },
+  { label: "Email", value: "shoobydoofruitsnacks@gmail.com", href: "mailto:shoobydoofruitsnacks@gmail.com" },
   { label: "Instagram", value: "@shoobydoofruitsnacks", href: "https://instagram.com/shoobydoofruitsnacks", external: true },
 ];
 
@@ -28,7 +28,7 @@ export default function ContactPage() {
 
       {/* Two columns: title + direct channels on the left, the mailto form on
           the right. Collapses to a single column on mobile. */}
-      <section className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 px-[6vw] pt-[16vh] pb-[6vh]">
+      <section className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 px-[6vw] pt-[9vh] lg:pt-[16vh] pb-[6vh]">
         <div className="lg:col-span-5 flex flex-col gap-9">
           <div>
             <h1
@@ -93,14 +93,21 @@ export default function ContactPage() {
 
           {/* ASCII signature — same shimmer/glitch as the gallery rail.
               Mirrored on its vertical axis (-scale-x-100) and parked on the
-              right side of the screen, behind the copy (-z-10), as a sigil. */}
-          <div className="pointer-events-none absolute bottom-0 right-0 -z-10 -mr-[3vw] -scale-x-100">
+              right side of the screen, behind the copy (-z-10), as a sigil.
+              Desktop/tablet only: at full size it's wider than a phone. */}
+          <div className="pointer-events-none absolute bottom-0 right-0 -z-10 -mr-[3vw] hidden -scale-x-100 sm:block">
             <ContactAscii />
           </div>
         </div>
 
         <div className="lg:col-span-7 lg:max-w-2xl w-full lg:mt-2">
           <ContactForm />
+        </div>
+
+        {/* Mobile signature — the same sigil, in-flow under the form so it
+            never collides with the fields, scaled to fit the phone width. */}
+        <div className="pointer-events-none -mr-[6vw] mt-2 flex -scale-x-100 justify-start sm:hidden">
+          <ContactAscii fontSize="0.34rem" opacity={0.22} />
         </div>
       </section>
     </main>

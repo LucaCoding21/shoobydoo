@@ -59,7 +59,7 @@ const LINKS: readonly NavLink[] = [
 // small-caps label/value form the tutorial's footer uses.
 const META: readonly { label: string; value: string }[] = [
   { label: "Follow", value: "@shoobydoofruitsnacks" },
-  { label: "Email", value: "shubhammohapatra24@gmail.com" },
+  { label: "Email", value: "shoobydoofruitsnacks@gmail.com" },
 ];
 
 function prefersReducedMotion() {
@@ -523,11 +523,20 @@ export default function HamburgerMenu({
           justify-content: space-between;
         }
 
-        /* Big display words flow in a wrapping row, just like the tutorial. */
+        /* Big display words. Desktop flows them in a wrapping row, just like
+           the tutorial; below lg they stack vertically at display size so the
+           menu fills the phone screen instead of cramming three words into
+           one line. */
         .nav-body {
           display: flex;
           flex-wrap: wrap;
           margin-top: 1rem;
+        }
+        @media (max-width: 1023px) {
+          .nav-body {
+            flex-direction: column;
+            margin-top: 0.5rem;
+          }
         }
         .nav-link-wrap {
           color: #ededeb;
@@ -596,6 +605,15 @@ export default function HamburgerMenu({
           width: 200px;
           height: 300px;
           overflow: hidden;
+        }
+
+        /* Below lg the stacked words go display-size (see .nav-body above). */
+        @media (max-width: 1023px) {
+          .nav-link {
+            font-size: clamp(2.7rem, 13vw, 4rem);
+            padding-top: 1.1rem;
+            padding-right: 0;
+          }
         }
 
         @media (min-width: 1024px) {
