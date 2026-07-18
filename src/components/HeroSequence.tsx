@@ -263,6 +263,9 @@ export default function HeroSequence() {
   // there is always a "selected" target visible; on next hover it glides to
   // the new photo with momentum (power3.out).
   const handlePhotoEnter = (e: React.MouseEvent<HTMLElement>) => {
+    // Touch devices synthesize a mouseenter on tap; on mobile a tap should just
+    // navigate, so skip the corner-bracket frame + camera-follow scroll entirely.
+    if (isMobile) return;
     const photo = e.currentTarget;
     const frame = cornerFrameRef.current;
     const grid = gridRef.current;
