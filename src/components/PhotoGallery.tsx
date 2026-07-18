@@ -12,6 +12,71 @@ type Props = {
   leadPhoto?: string;
 };
 
+// One grid tile that fades itself in the moment its photo has real pixels,
+// instead of hard-cutting from the black box the instant the image decodes
+// (the "plop" you'd otherwise see as a dozen tiles snap in at once). The fade
+// is keyed off each tile's OWN load, so the grid resolves as a natural cascade
+// following the network; a small index-based delay smooths the case where a
+// batch lands from cache on the same frame.
+function GalleryTile({
+  src,
+  index,
+  count,
+  eventTitle,
+  onOpen,
+  buttonRef,
+}: {
+  src: string;
+  index: number;
+  count: number;
+  eventTitle: string;
+  onOpen: (i: number) => void;
+  buttonRef?: React.Ref<HTMLButtonElement>;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  // Cached images can finish before React wires up onLoad, so the event never
+  // fires and the tile would sit invisible forever. Catch that on mount.
+  useEffect(() => {
+    const img = wrapRef.current?.querySelector("img");
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  }, []);
+
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={() => onOpen(index)}
+      className="relative aspect-[3/4] overflow-hidden bg-black/30 group cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+      aria-label={`Open photo ${index + 1} of ${count}`}
+    >
+      <div
+        ref={wrapRef}
+        className="absolute inset-0 transition-opacity duration-700 ease-out"
+        style={{
+          opacity: loaded ? 1 : 0,
+          // Cap the stagger so late tiles never wait long; the natural load
+          // order already carries most of the cascade.
+          transitionDelay: loaded ? `${Math.min(index, 10) * 45}ms` : "0ms",
+        }}
+      >
+        <Image
+          src={src}
+          alt={`${eventTitle} — photo ${index + 1}`}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          quality={75}
+          style={{ objectFit: "cover" }}
+          preload={index < 3}
+          onLoad={() => setLoaded(true)}
+          className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        />
+      </div>
+    </button>
+  );
+}
+
 export default function PhotoGallery({ photos, eventTitle, leadPhoto }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const firstTileRef = useRef<HTMLButtonElement>(null);
@@ -66,25 +131,15 @@ export default function PhotoGallery({ photos, eventTitle, leadPhoto }: Props) {
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-[6px]">
         {allPhotos.map((src, i) => (
-          <button
+          <GalleryTile
             key={src + i}
-            ref={i === 0 ? firstTileRef : undefined}
-            type="button"
-            onClick={() => setOpenIdx(i)}
-            className="relative aspect-[3/4] overflow-hidden bg-black/30 group cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            aria-label={`Open photo ${i + 1} of ${allPhotos.length}`}
-          >
-            <Image
-              src={src}
-              alt={`${eventTitle} — photo ${i + 1}`}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              quality={75}
-              style={{ objectFit: "cover" }}
-              preload={i < 3}
-              className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-            />
-          </button>
+            buttonRef={i === 0 ? firstTileRef : undefined}
+            src={src}
+            index={i}
+            count={allPhotos.length}
+            eventTitle={eventTitle}
+            onOpen={setOpenIdx}
+          />
         ))}
       </div>
 
