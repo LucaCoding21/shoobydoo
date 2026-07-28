@@ -114,7 +114,7 @@ export default function AboutPage() {
           <div className="hidden lg:col-span-3 lg:block" aria-hidden />
           <figure className="lg:col-span-3">
             <div className="relative aspect-[4/5] w-full max-w-[16rem] overflow-hidden rounded-sm">
-              <PixelImage src="/sselfie.jpg" alt="Shoobydoo" />
+              <PixelImage src="/about-portrait.jpg" alt="Shoobydoo" />
             </div>
           </figure>
           <div className="lg:col-span-5 lg:pt-1">
