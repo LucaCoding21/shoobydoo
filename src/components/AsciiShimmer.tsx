@@ -29,6 +29,7 @@ export default function AsciiShimmer({
   opacity = 0.3,
 }: Props) {
   const artRef = useRef<HTMLPreElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const isInk = (ch: string) => ch !== blank && ch !== " ";
@@ -76,10 +77,13 @@ export default function AsciiShimmer({
       render(grid);
     };
 
+    let burst: ReturnType<typeof setInterval> | null = null;
+
     const glitch = () => {
+      if (burst !== null) return; // one burst at a time
       const truth = art.map((line) => Array.from(line));
       let frame = 0;
-      const burst = setInterval(() => {
+      burst = setInterval(() => {
         frame++;
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < grid[r].length; c++) {
@@ -100,7 +104,8 @@ export default function AsciiShimmer({
         }
         render(grid);
         if (frame >= 9) {
-          clearInterval(burst);
+          if (burst !== null) clearInterval(burst);
+          burst = null;
           if (artRef.current) artRef.current.style.transform = "translateX(0)";
           grid = art.map((line) => Array.from(line));
           shimmerCells = [];
@@ -110,19 +115,66 @@ export default function AsciiShimmer({
     };
 
     render(grid);
-    const shimmerInterval = setInterval(shimmerTick, 110);
-    const autoGlitch = setInterval(() => {
-      if (Math.random() < 0.4) glitch();
-    }, 4500);
+
+    // Static art under reduced motion — no intervals at all.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // The intervals rewrite the whole <pre> (a full layout + paint of a
+    // text-shadowed text block) ~9×/s, forever. Only pay that while the art is
+    // actually on screen AND the tab is visible — offscreen instances (e.g. the
+    // sign-off cat below a long photo grid) otherwise jank scrolling for the
+    // entire page.
+    let shimmerInterval: ReturnType<typeof setInterval> | null = null;
+    let autoGlitch: ReturnType<typeof setInterval> | null = null;
+    let inView = false;
+
+    const stop = () => {
+      if (shimmerInterval !== null) clearInterval(shimmerInterval);
+      if (autoGlitch !== null) clearInterval(autoGlitch);
+      shimmerInterval = null;
+      autoGlitch = null;
+      if (burst !== null) clearInterval(burst);
+      burst = null;
+      // Reset to the true art so a paused glitch never leaves garbage behind.
+      if (artRef.current) artRef.current.style.transform = "translateX(0)";
+      grid = art.map((line) => Array.from(line));
+      shimmerCells = [];
+      render(grid);
+    };
+
+    const start = () => {
+      if (shimmerInterval !== null) return;
+      shimmerInterval = setInterval(shimmerTick, 110);
+      autoGlitch = setInterval(() => {
+        if (Math.random() < 0.4) glitch();
+      }, 4500);
+    };
+
+    const sync = () => {
+      if (inView && !document.hidden) start();
+      else stop();
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        sync();
+      },
+      { rootMargin: "10%" },
+    );
+    if (rootRef.current) io.observe(rootRef.current);
+    document.addEventListener("visibilitychange", sync);
 
     return () => {
-      clearInterval(shimmerInterval);
-      clearInterval(autoGlitch);
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+      stop();
     };
   }, [art, pool, blank]);
 
   return (
     <div
+      ref={rootRef}
       aria-hidden
       className="ascii-screen relative overflow-hidden select-none pointer-events-none"
       style={{ color: "#ededeb", opacity }}

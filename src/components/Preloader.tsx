@@ -34,8 +34,9 @@ let preloaderPlayed = false;
 const MAX_WAIT_MS = 6000;
 
 // Per-frame easing factor for the displayed number. Smooths the steps as images
-// land (and gives a graceful ~1s climb even when everything is already cached).
-const LERP = 0.09;
+// land. 0.16 puts the floor at ~0.5s when everything is already cached — quick
+// enough not to feel like an artificial queue, slow enough to read as a count.
+const LERP = 0.16;
 
 // Warm one image as the rush will actually request it: build the same optimized
 // srcSet/sizes via getImageProps so the browser fetches the identical variant
@@ -143,7 +144,7 @@ export default function Preloader() {
           openIntroGate();
           // Unmount once the lift transition (1s) has finished.
           timers.push(setTimeout(() => setActive(false), 1000));
-        }, 300),
+        }, 150),
       );
     };
 

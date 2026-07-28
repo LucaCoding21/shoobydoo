@@ -87,8 +87,12 @@ export default function AboutPage() {
           {/* Right — cyber-sigil hero art. ABSOLUTE so it floats as its own
               entity: tweak `right-[…]` to move horizontally, `top-[…]` to move
               vertically, `h-[…vh]` to resize. Nothing else on the page moves.
-              White line-work via the same invert + screen treatment as the footer. */}
-          <div className="relative mt-6 min-h-[44vh] lg:col-span-5 lg:mt-0 lg:min-h-[62vh]">
+              White line-work via the same invert + screen treatment as the footer.
+              Desktop: in-grid column beside the name. Mobile: the wrapper leaves
+              the flow entirely (absolute, -z-10) so the sigil sits BEHIND the
+              name + bio as a background, matching the desktop layering, instead
+              of claiming its own 44vh block below the text. */}
+          <div className="pointer-events-none absolute inset-0 -z-10 lg:relative lg:inset-auto lg:z-auto lg:col-span-5 lg:min-h-[62vh]">
             <Image
               src="/about-sword.png"
               alt=""
@@ -96,8 +100,8 @@ export default function AboutPage() {
               width={1152}
               height={2048}
               preload
-              className="pointer-events-none absolute right-[-14%] top-[52%] h-[56vh] w-auto max-w-none -translate-y-1/2 select-none lg:right-[-30%] lg:top-[60%] lg:h-[102vh]"
-              style={{ filter: "invert(1)", mixBlendMode: "screen", opacity: 0.28 }}
+              className="pointer-events-none absolute right-[-14%] top-[52%] h-[56vh] w-auto max-w-none -translate-y-1/2 select-none opacity-[0.22] lg:right-[-30%] lg:top-[60%] lg:h-[102vh] lg:opacity-[0.28]"
+              style={{ filter: "invert(1)", mixBlendMode: "screen" }}
             />
           </div>
         </div>

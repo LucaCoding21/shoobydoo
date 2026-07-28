@@ -31,9 +31,15 @@ const POOL = [
   "⡷","⡿","⣷","⣾","⣽","⣻","⠟","⠿","⡻",
 ];
 
-// Size is overridable so the gallery can render the cat smaller on mobile,
-// where the full-size figure is wider than the phone viewport.
-export default function AsciiCat({ fontSize }: { fontSize?: string }) {
+// Size/opacity are overridable so the gallery can render the cat smaller and
+// fainter on mobile, where it sits behind the event info as a background.
+export default function AsciiCat({
+  fontSize,
+  opacity,
+}: {
+  fontSize?: string;
+  opacity?: number;
+}) {
   return (
     <AsciiShimmer
       art={BASE}
@@ -41,6 +47,7 @@ export default function AsciiCat({ fontSize }: { fontSize?: string }) {
       blank="⠀"
       align="right"
       fontSize={fontSize}
+      opacity={opacity}
     />
   );
 }

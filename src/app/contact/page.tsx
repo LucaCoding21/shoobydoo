@@ -104,9 +104,11 @@ export default function ContactPage() {
           <ContactForm />
         </div>
 
-        {/* Mobile signature — the same sigil, in-flow under the form so it
-            never collides with the fields, scaled to fit the phone width. */}
-        <div className="pointer-events-none -mr-[6vw] mt-2 flex -scale-x-100 justify-start sm:hidden">
+        {/* Mobile signature — same sigil, parked bottom-right BEHIND the form
+            (the fields are transparent underlines, so it reads through them as
+            a watermark), mirroring the desktop's behind-the-copy placement
+            instead of sitting in-flow below the page. */}
+        <div className="pointer-events-none absolute bottom-0 right-[-8vw] -z-10 -scale-x-100 sm:hidden">
           <ContactAscii fontSize="0.34rem" opacity={0.22} />
         </div>
       </section>

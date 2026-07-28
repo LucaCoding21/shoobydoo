@@ -336,7 +336,7 @@ export default function HeroSequence() {
       // user navigated to a gallery and came back. A hard refresh starts a new
       // runtime, so `introPlayed` is false again and the intro replays.
       const skipIntro = introPlayed;
-      const rushDuration = isMobile ? 3.0 : 3.2;
+      const rushDuration = isMobile ? 2.2 : 2.4;
       const ease = "power4.inOut";
       // Mobile: one centred column. Desktop: a wider window for the 3 strips.
       const initialClip = isMobile
@@ -365,7 +365,7 @@ export default function HeroSequence() {
         gsap.set([grid, ...gridItems], { opacity: 1, scale: 1, x: 0, y: 0 });
         gsap.set(titleEl, { yPercent: 0 });
         if (menuLabel) gsap.set(menuLabel, { yPercent: 0, visibility: "visible" });
-        gsap.set(swordRef.current, { opacity: 0.15 });
+        gsap.set(swordRef.current, { opacity: isMobile ? 0.22 : 0.15 });
         setPhase("done");
         setCanHover(true);
         setShowMenu(true);
@@ -496,8 +496,8 @@ export default function HeroSequence() {
           // In-fold thumbs (the top rows) wipe now, as part of the intro; the
           // third row is held clipped and revealed on scroll (scrollItems above).
           // On desktop the wipe starts almost immediately so the grid is already
-          // resolving as the rush fades; on mobile it trails the morph slightly.
-          const wipeStart = isMobile ? 0.75 : 0.2;
+          // resolving as the rush fades; on mobile it overlaps the morph's tail.
+          const wipeStart = isMobile ? 0.3 : 0.1;
           introItems.forEach((item, idx) => {
             const from = WIPES[idx % WIPES.length];
             gsap.set(item, {
@@ -508,7 +508,7 @@ export default function HeroSequence() {
             gsap.to(item, {
               clipPath: TARGET,
               WebkitClipPath: TARGET,
-              duration: 1.5,
+              duration: 1.1,
               ease: "power3.inOut",
               delay: wipeStart,
             });
@@ -518,10 +518,10 @@ export default function HeroSequence() {
         "settled",
       );
 
-      // Mask + slide: title rises after the photo wipes finish (wipes end at
-      // settled+1.85). settled+3.2 gives the grid ~1.35s of breathing room before
-      // the title comes in, so the two reveals don't fight for attention. The
-      // corner [MENU] label is animated in the SAME tween for an exact 1:1 sync.
+      // Mask + slide: title rises as the photo wipes finish (wipes end at
+      // settled+1.2 desktop / +1.4 mobile), so the reveal hands straight into
+      // the wordmark with no dead air. The corner [MENU] label is animated in
+      // the SAME tween for an exact 1:1 sync.
       tl.to(
         menuLabel ? [titleEl, menuLabel] : titleEl,
         {
@@ -529,29 +529,32 @@ export default function HeroSequence() {
           duration: 2.3,
           ease: "expo.out",
         },
-        "settled+=1.9",
+        "settled+=1.4",
       );
       // Enable clicks on the menu the instant it starts revealing.
-      tl.call(() => setShowMenu(true), [], "settled+=1.9");
+      tl.call(() => setShowMenu(true), [], "settled+=1.4");
 
       // Fade sword in starting just before settled — by the time the rush layer
       // hands off, the sword is already at full opacity so it reads as if it
       // had always been there behind the photos.
       tl.to(
         swordRef.current,
-        { opacity: 0.15, duration: 0.8, ease: "power2.out" },
+        // Mobile shows less of the sword (photos cover most of its body), so
+        // the visible slivers get a touch more presence.
+        { opacity: isMobile ? 0.22 : 0.15, duration: 0.8, ease: "power2.out" },
         "settled-=0.2",
       );
 
       tl.call(() => setPhase("reveal"), [], "settled");
-      // Wipes start at settled+0.75 and run 1.5s (end at settled+2.25). Give the
-      // grid a 1s buffer after the wipes complete before enabling hover, so the
-      // corner brackets can't appear over a still-unrevealed photo.
-      tl.call(() => setCanHover(true), [], "settled+=3.25");
+      // Enable clicks/hover the moment the last wipe lands (settled+1.2 desktop,
+      // +1.4 mobile) — the grid must never sit visible-but-inert. The corner
+      // brackets can't appear over an unrevealed photo because there are none
+      // left by then.
+      tl.call(() => setCanHover(true), [], "settled+=1.5");
       tl.call(() => {
         setPhase("done");
         introPlayed = true;
-      }, [], "settled+=4.4");
+      }, [], "settled+=3.0");
     },
     { scope: containerRef, dependencies: [isReady, gateOpen] },
   );
@@ -582,12 +585,17 @@ export default function HeroSequence() {
           ref={swordRef}
           className="absolute pointer-events-none select-none"
           style={{
-            top: "57vh",
+            top: isMobile ? "52vh" : "57vh",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            // Sword is 3:4 (1080×1440). Sizing by height with proportional
-            // width keeps the aspect intact while letting it scale to the viewport.
-            height: isMobile ? "55vh" : "75vh",
+            // Sword is 3:4 (1080×1440). Desktop sizes by height so it scales
+            // with the viewport; mobile sizes by WIDTH so the sigil spans the
+            // whole screen behind both photo columns — sized by height it only
+            // peeked through the skinny centre gap and never read as a
+            // background layer.
+            ...(isMobile
+              ? { width: "108vw" }
+              : { height: "75vh" }),
             aspectRatio: "1080 / 1440",
             opacity: 0,
             filter: "invert(1)",
@@ -599,8 +607,8 @@ export default function HeroSequence() {
             alt=""
             aria-hidden="true"
             fill
-            quality={100}
-            sizes={isMobile ? "55vh" : "75vh"}
+            quality={isMobile ? 75 : 100}
+            sizes={isMobile ? "108vw" : "57vh"}
             style={{ objectFit: "contain" }}
             preload
           />

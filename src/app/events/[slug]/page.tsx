@@ -55,7 +55,16 @@ export default async function EventGalleryPage({
           Left rail uses self-start so its sticky positioning works inside the
           grid track. */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-12 px-[4vw] pb-16">
-        <aside className="lg:col-span-1 lg:sticky lg:top-2 lg:self-start lg:h-[calc(100vh-5rem)] lg:overflow-hidden lg:[container-type:inline-size] flex flex-col gap-4 min-w-0">
+        {/* relative z-0 makes the aside its own stacking context, so the mobile
+            background cat's -z-10 lands behind the info text but still above
+            the page background (a bare -z-10 would paint under <main>'s fill). */}
+        <aside className="relative z-0 lg:col-span-1 lg:sticky lg:top-2 lg:self-start lg:h-[calc(100vh-5rem)] lg:overflow-hidden lg:[container-type:inline-size] flex flex-col gap-4 min-w-0">
+          {/* Mobile — the rail cat as a background sigil behind the event info,
+              bleeding off the right edge, same layering as the desktop rail
+              art. The photo grid below paints over whatever hangs past. */}
+          <div className="pointer-events-none absolute -top-4 right-[-8vw] -z-10 lg:hidden">
+            <AsciiCat fontSize="0.8rem" opacity={0.25} />
+          </div>
           <div className="flex flex-col gap-4">
             <h1
               // On desktop the title lives in a narrow 1/4-width rail, so long
@@ -118,12 +127,6 @@ export default async function EventGalleryPage({
               }
             />
           )}
-
-          {/* Mobile sign-off — the rail cat, scaled to the phone width, sitting
-              at the end of the photos like a stamp. */}
-          <div className="mt-10 lg:hidden">
-            <AsciiCat fontSize="0.95rem" />
-          </div>
 
           {nextEvent && nextEvent.slug !== slug && (
             <Link
