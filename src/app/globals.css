@@ -169,7 +169,7 @@ body {
   opacity: 1;
 }
 .sharingan-cursor__img--pointer {
-  background-image: url("/cursor/mangekyo.png");
+  background-image: url("/cursor/mangekyo.webp");
   opacity: 0;
 }
 .sharingan-cursor__spinner.is-active .sharingan-cursor__img--normal {

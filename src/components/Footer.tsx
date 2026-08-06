@@ -118,7 +118,7 @@ export default function Footer() {
             {COLUMNS.map((col) => (
               <div key={col.title} className="flex flex-col gap-4">
                 <h2
-                  className="text-[0.65rem] opacity-40"
+                  className="text-[0.65rem] opacity-60"
                   style={{
                     fontFamily: "Arial, Helvetica, sans-serif",
                     textTransform: "uppercase",

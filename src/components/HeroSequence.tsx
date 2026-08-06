@@ -597,7 +597,13 @@ export default function HeroSequence() {
               ? { width: "108vw" }
               : { height: "75vh" }),
             aspectRatio: "1080 / 1440",
-            opacity: 0,
+            // Server-rendered at FINAL opacity so the browser paints it with the
+            // first frame — it's the page's LCP element, and painting it under
+            // the (opaque) preloader curtain moves LCP from ~6s to ~1s. The
+            // intro timeline immediately re-sets it to 0 when the gate opens
+            // (see gsap.set in useGSAP) and fades it back in, so the visible
+            // behaviour is unchanged.
+            opacity: isMobile ? 0.22 : 0.15,
             filter: "invert(1)",
             mixBlendMode: "screen",
           }}
