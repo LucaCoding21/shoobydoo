@@ -25,9 +25,42 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
+// Absolute base for og:image and friends. Vercel injects the URL vars itself,
+// so deploys resolve the share card without any dashboard config:
+//   NEXT_PUBLIC_SITE_URL          — set this by hand once a custom domain exists
+//   VERCEL_PROJECT_PRODUCTION_URL — the stable production domain
+//   VERCEL_URL                    — per-deploy URL, so preview builds work too
+// Vercel's vars carry no protocol, hence the https:// prefix.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
+
+// The share card itself is `opengraph-image.jpg` in this folder — Next's file
+// convention emits og:image (plus type/width/height) from it automatically, and
+// covers every route below `/`. Don't also set `openGraph.images` here or the
+// tags get emitted twice. `twitter.card` is what upgrades X to the wide layout;
+// X falls back to og:image, so no separate twitter-image file is needed.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Shoobydoo",
   description: "Concert photography from the harbour and beyond.",
+  openGraph: {
+    title: "Shoobydoo",
+    description: "Concert photography from the harbour and beyond.",
+    siteName: "Shoobydoo",
+    type: "website",
+    locale: "en_US",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shoobydoo",
+    description: "Concert photography from the harbour and beyond.",
+  },
 };
 
 export default function RootLayout({
