@@ -580,30 +580,28 @@ export default function HeroSequence() {
           To add a new persistent bg element, drop it inside this wrapper.
           ════════════════════════════════════════════════════════════════════ */}
       <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-10">
-        {/* Sword — gothic backdrop, fades in once the rush ends. */}
+        {/* Sword — gothic backdrop, fades in once the rush ends.
+
+            This is the page's LCP element, so two rules keep LCP at first
+            paint instead of ~6s:
+            · It server-renders at FINAL opacity (0.22 mobile / 0.15 desktop,
+              via the responsive classes below) so the browser paints it with
+              the first frame — invisibly, under the opaque preloader curtain.
+              The intro timeline re-sets it to 0 when the gate opens (gsap.set
+              in useGSAP) and fades it back in, so visible behaviour is
+              unchanged.
+            · Its <Image> props must NOT depend on `isMobile`: that state flips
+              on hydration, which would swap the srcset/quality URL and force a
+              refetch + late repaint (a second, later LCP candidate). Layout is
+              responsive via CSS only — sword is 3:4 (1080×1440); mobile sizes
+              by WIDTH so the sigil spans the screen behind both photo columns,
+              desktop by HEIGHT so it scales with the viewport. */}
         <div
           ref={swordRef}
-          className="absolute pointer-events-none select-none"
+          className="absolute pointer-events-none select-none left-1/2 top-[52vh] w-[108vw] opacity-[0.22] md:top-[57vh] md:h-[75vh] md:w-auto md:opacity-[0.15]"
           style={{
-            top: isMobile ? "52vh" : "57vh",
-            left: "50%",
             transform: "translate(-50%, -50%)",
-            // Sword is 3:4 (1080×1440). Desktop sizes by height so it scales
-            // with the viewport; mobile sizes by WIDTH so the sigil spans the
-            // whole screen behind both photo columns — sized by height it only
-            // peeked through the skinny centre gap and never read as a
-            // background layer.
-            ...(isMobile
-              ? { width: "108vw" }
-              : { height: "75vh" }),
             aspectRatio: "1080 / 1440",
-            // Server-rendered at FINAL opacity so the browser paints it with the
-            // first frame — it's the page's LCP element, and painting it under
-            // the (opaque) preloader curtain moves LCP from ~6s to ~1s. The
-            // intro timeline immediately re-sets it to 0 when the gate opens
-            // (see gsap.set in useGSAP) and fades it back in, so the visible
-            // behaviour is unchanged.
-            opacity: isMobile ? 0.22 : 0.15,
             filter: "invert(1)",
             mixBlendMode: "screen",
           }}
@@ -613,8 +611,8 @@ export default function HeroSequence() {
             alt=""
             aria-hidden="true"
             fill
-            quality={isMobile ? 75 : 100}
-            sizes={isMobile ? "108vw" : "57vh"}
+            quality={75}
+            sizes="(max-width: 767px) 108vw, 45vw"
             style={{ objectFit: "contain" }}
             preload
           />
