@@ -30,7 +30,7 @@ type NavLink = {
 // Two portrait (2:3) shots per link, from the same folder, shown uncropped.
 const LINKS: readonly NavLink[] = [
   {
-    title: "HOME",
+    title: "WORK",
     href: "/",
     imgs: [
       "/events/insomnia-2025/_DSC2208-Enhanced-NR.jpg",

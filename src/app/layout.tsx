@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
 import EventTransitionLayer from "@/components/EventTransitionLayer";
+import { SITE_URL } from "@/lib/siteUrl";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,19 +26,11 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
-// Absolute base for og:image and friends. Vercel injects the URL vars itself,
-// so deploys resolve the share card without any dashboard config:
-//   NEXT_PUBLIC_SITE_URL          — set this by hand once a custom domain exists
-//   VERCEL_PROJECT_PRODUCTION_URL — the stable production domain
-//   VERCEL_URL                    — per-deploy URL, so preview builds work too
-// Vercel's vars carry no protocol, hence the https:// prefix.
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+// The description doubles as the search snippet, so it carries the Instagram
+// handle — "shoobydoofruitsnacks" is a globally unique string, and having it in
+// indexable metadata is what lets a search for the handle land here.
+const DESCRIPTION =
+  "Concert and live-music photography by Shoobydoo — @shoobydoofruitsnacks on Instagram. From the harbour's main stages, the festival fields, and the small rooms in between.";
 
 // The share card itself is `opengraph-image.jpg` in this folder — Next's file
 // convention emits og:image (plus type/width/height) from it automatically, and
@@ -47,7 +40,7 @@ const SITE_URL =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Shoobydoo",
-  description: "Concert photography from the harbour and beyond.",
+  description: DESCRIPTION,
   openGraph: {
     title: "Shoobydoo",
     description: "Concert photography from the harbour and beyond.",
@@ -63,6 +56,21 @@ export const metadata: Metadata = {
   },
 };
 
+// Structured data: tells Google that shoobydoo.ca and the Instagram account are
+// the same person, so a search for the handle surfaces this site. Rendered as a
+// plain <script> in the root layout — it applies to every page. The payload is
+// all constants (no user input), so JSON.stringify is safe here.
+const PERSON_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Shoobydoo",
+  alternateName: "shoobydoofruitsnacks",
+  url: SITE_URL,
+  jobTitle: "Concert and live-music photographer",
+  email: "mailto:shoobydoofruitsnacks@gmail.com",
+  sameAs: ["https://instagram.com/shoobydoofruitsnacks"],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -74,6 +82,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0e0f12] text-[#ededeb] overflow-x-hidden overscroll-none">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(PERSON_JSON_LD) }}
+        />
         {children}
         <Footer />
         <EventTransitionLayer />

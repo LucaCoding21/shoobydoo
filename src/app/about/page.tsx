@@ -78,7 +78,7 @@ export default function AboutPage() {
               className="mt-8 max-w-[36ch] text-[0.82rem] leading-relaxed opacity-60 lg:mt-10 lg:ml-[50%]"
               style={{ fontFamily: SANS }}
             >
-              Concert and live-music photographer. Today, Shoobydoo&rsquo;s work
+              I&rsquo;m a concert and live-music photographer. Today, my work
               can be seen across the harbour&rsquo;s main stages, the festival
               fields, and the small rooms in between.
             </p>
@@ -128,9 +128,9 @@ export default function AboutPage() {
               className="mt-3 max-w-[40ch] text-[0.8rem] leading-relaxed opacity-55"
               style={{ fontFamily: SANS }}
             >
-              Concert and editorial photographer. Self-taught in the pit, member
-              of the harbour&rsquo;s live-music circuit, working its venues and
-              the festival fields beyond.
+              I&rsquo;m a concert and editorial photographer &mdash; self-taught
+              in the pit, part of the harbour&rsquo;s live-music circuit, working
+              its venues and the festival fields beyond.
             </p>
           </div>
         </div>
