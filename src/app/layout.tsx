@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
@@ -107,6 +108,10 @@ export default function RootLayout({
         <EventTransitionLayer />
         <CustomCursor />
       </body>
+      {/* Google Analytics 4 via Next's first-party wrapper: same gtag.js +
+          config as the stock snippet, but loaded after hydration and tracking
+          client-side route changes an inline snippet would miss. */}
+      <GoogleAnalytics gaId="G-4MYFP30NJ1" />
     </html>
   );
 }
