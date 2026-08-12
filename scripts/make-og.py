@@ -8,8 +8,9 @@ covered. Type matches SiteWordmark.tsx: Fraunces, uppercase, 0.08em tracking,
 
 Fraunces reaches the browser via next/font/google, which only ever writes woff2
 into .next/. PIL can't read woff2 and .next/ is regenerable, so the latin subset
-is instantiated at wght=400 and kept in scripts/og-assets/. To re-extract it
-after a font change, pull the Fraunces woff2 out of the build cache:
+is instantiated at wght=400 (wordmark) and wght=600 (tagline) and kept in
+scripts/og-assets/. To re-extract after a font change, pull the Fraunces woff2
+out of the build cache:
 
     grep -A1 'font-family: Fraunces' .next/dev/static/chunks/*fraunces*.css
 
@@ -32,16 +33,16 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "public/events/insomnia-2026/_7R45554-Enhanced-NR.jpg"
 FONT = ROOT / "scripts/og-assets/fraunces-400.ttf"
+TAGLINE_FONT = ROOT / "scripts/og-assets/fraunces-600.ttf"
 OUT = ROOT / "src/app/opengraph-image.jpg"
 
 W, H = 1200, 630  # the Open Graph standard; below this some scrapers use the small card
 INK = (237, 237, 235)  # #ededeb, the site's foreground
-MUTED = (198, 198, 194)
 
 WORDMARK = "SHOOBYDOO"
 TAGLINE = "CONCERT PHOTOGRAPHY"
 WORDMARK_SIZE = 88
-TAGLINE_SIZE = 26
+TAGLINE_SIZE = 30  # semibold and near-white so it survives small share cards
 TRACKING = 0.08  # matches SiteWordmark.tsx letterSpacing
 TAGLINE_TRACKING = 0.30
 BASELINE_INSET = 64
@@ -86,7 +87,7 @@ def main() -> None:
     draw = ImageDraw.Draw(img)
 
     wordmark = ImageFont.truetype(str(FONT), WORDMARK_SIZE)
-    tagline = ImageFont.truetype(str(FONT), TAGLINE_SIZE)
+    tagline = ImageFont.truetype(str(TAGLINE_FONT), TAGLINE_SIZE)
     wordmark_ascent = wordmark.getmetrics()[0]
     tagline_ascent = tagline.getmetrics()[0]
 
@@ -94,7 +95,7 @@ def main() -> None:
     wordmark_y = tagline_y - int(WORDMARK_SIZE * 0.34) - wordmark_ascent
 
     draw_tracked(draw, WORDMARK, wordmark, W / 2, wordmark_y, WORDMARK_SIZE * TRACKING, INK)
-    draw_tracked(draw, TAGLINE, tagline, W / 2, tagline_y, TAGLINE_SIZE * TAGLINE_TRACKING, MUTED)
+    draw_tracked(draw, TAGLINE, tagline, W / 2, tagline_y, TAGLINE_SIZE * TAGLINE_TRACKING, INK)
 
     img.save(OUT, quality=91)
     print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB, {W}x{H})")
