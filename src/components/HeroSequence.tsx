@@ -21,19 +21,21 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 // IMPORTANT: the LAST entry must be the landing photo (LANDING_SRC) — on
 // mobile the rush column morphs its final slide into the grid, and that
 // measurement assumes the last slide is the landing thumbnail.
+// Rush slides are decorative transition art (every photo reappears as a real,
+// labelled grid tile right after), so they render with empty alt + aria-hidden.
 const RUSH_SLIDES = [
-  { src: "/thumbnails/nghtmre-harbour.jpg", alt: "NGHTMRE at Harbour" },
-  { src: "/events/insomnia-2026/_7R46204-Enhanced-NR.jpg", alt: "Insomnia 2026" },
-  { src: "/thumbnails/viperactive-harbour.jpg", alt: "viperactive at Harbour" },
-  { src: "/events/nghtmre/_DSC9126-Enhanced-NR.jpg", alt: "NGHTMRE at Harbour" },
-  { src: "/thumbnails/insomnia-2026.jpg", alt: "Insomnia 2026" },
-  { src: "/events/restricted/7R403147-Enhanced-NR.jpg", alt: "Restricted at Harbour" },
-  { src: "/thumbnails/restricted-harbour.jpg", alt: "Restricted at Harbour" },
-  { src: "/events/viperactive/_7R48078-Enhanced-NR.jpg", alt: "viperactive at Harbour" },
-  { src: "/thumbnails/phrva-village-studios.jpg", alt: "PHRVA at Village Studios" },
-  { src: "/events/insomnia-2025/_DSC3556-Enhanced-NR.jpg", alt: "Insomnia 2025" },
-  { src: "/events/insomnia-2026/_7R46714.jpg", alt: "Insomnia 2026" },
-  { src: "/thumbnails/insomnia-2025.jpg", alt: "Insomnia 2025" },
+  { src: "/thumbnails/nghtmre-harbour.jpg" },
+  { src: "/events/insomnia-2026/_7R46204-Enhanced-NR.jpg" },
+  { src: "/thumbnails/viperactive-harbour.jpg" },
+  { src: "/events/nghtmre/_DSC9126-Enhanced-NR.jpg" },
+  { src: "/thumbnails/insomnia-2026.jpg" },
+  { src: "/events/restricted/7R403147-Enhanced-NR.jpg" },
+  { src: "/thumbnails/restricted-harbour.jpg" },
+  { src: "/events/viperactive/_7R48078-Enhanced-NR.jpg" },
+  { src: "/thumbnails/phrva-village-studios.jpg" },
+  { src: "/events/insomnia-2025/_DSC3556-Enhanced-NR.jpg" },
+  { src: "/events/insomnia-2026/_7R46714.jpg" },
+  { src: "/thumbnails/insomnia-2025.jpg" },
 ] as const;
 
 const LANDING_SRC = "/thumbnails/insomnia-2025.jpg";
@@ -86,7 +88,7 @@ const GRID: { src: string; alt: string }[] = (() => {
     : EVENT_LIST;
   return (ordered as EventData[]).map((e) => ({
     src: e.homeThumbSrc,
-    alt: e.title,
+    alt: e.seo.photoAlt,
   }));
 })();
 
@@ -153,7 +155,7 @@ function RushColumn({
               aria-hidden
               fill
               preload={i < 2}
-              quality={90}
+              quality={75}
               sizes="20vw"
               style={{ objectFit: "cover" }}
             />
@@ -643,7 +645,7 @@ export default function HeroSequence() {
           whiteSpace: "nowrap",
         }}
       >
-        <Link href="/" aria-label="Shoobydoo — home" className="inline-block">
+        <Link href="/" aria-label="Shoobydoo, home" className="inline-block">
           <span
             ref={titleRef}
             className="title-mask-initial"
@@ -745,7 +747,10 @@ export default function HeroSequence() {
                   src={thumb.src}
                   alt={thumb.alt}
                   fill
-                  quality={isMobile ? 75 : 95}
+                  // One flat quality: 75 is plenty for a ~15vw thumbnail, and a
+                  // value that doesn't depend on isMobile can't swap the srcset
+                  // URL on hydration and refetch.
+                  quality={75}
                   sizes={isMobile ? "40vw" : "15vw"}
                   style={{ objectFit: "cover" }}
                 />
@@ -863,7 +868,8 @@ export default function HeroSequence() {
                   >
                     <Image
                       src={slide.src}
-                      alt={slide.alt}
+                      alt=""
+                      aria-hidden
                       fill
                       preload={i < 3 || isLast}
                       quality={75}

@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { EVENTS, allEventSlugs, getEvent } from "@/data/events";
+import { EVENTS, allEventSlugs, getEvent, type EventData } from "@/data/events";
+import { SITE_URL } from "@/lib/siteUrl";
+import { OG_IMAGE } from "@/lib/ogImage";
 import PhotoGallery from "@/components/PhotoGallery";
 import AsciiCat from "@/components/AsciiCat";
 import HamburgerMenu from "@/components/HamburgerMenu";
@@ -19,10 +21,50 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const event = getEvent(slug);
-  if (!event) return { title: "Shoobydoo" };
+  if (!event) return { title: { absolute: "Shoobydoo" } };
+  const { title, description } = event.seo;
   return {
-    title: `${event.title} — Shoobydoo`,
-    description: `Photos from ${event.title}.`,
+    // title.absolute: the SEO titles end in "| Concert Photos by Shoobydoo",
+    // so the root layout's "%s | Shoobydoo" template must not suffix again.
+    title: { absolute: title },
+    description,
+    alternates: { canonical: `/events/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `/events/${slug}`,
+      images: [OG_IMAGE],
+    },
+  };
+}
+
+// ImageGallery structured data: one script per gallery page, naming the event,
+// where it happened, and who shot it. All values come from the static EVENTS
+// table (no user input), so JSON.stringify is safe here.
+function galleryJsonLd(event: EventData) {
+  const { seo } = event;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: event.title,
+    description: seo.description,
+    url: `${SITE_URL}/events/${event.slug}`,
+    contentLocation: {
+      "@type": "Place",
+      ...(seo.venueName ? { name: seo.venueName } : {}),
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: seo.locality,
+        addressRegion: seo.region,
+        addressCountry: "CA",
+      },
+    },
+    author: {
+      "@type": "Person",
+      name: "Shoobydoo",
+      url: SITE_URL,
+    },
+    image: event.photos.slice(0, 3).map((p) => `${SITE_URL}${p}`),
   };
 }
 
@@ -42,6 +84,12 @@ export default async function EventGalleryPage({
 
   return (
     <main className="min-h-screen bg-[#0e0f12] text-[#ededeb]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(galleryJsonLd(event)),
+        }}
+      />
       {/* Fixed height reserves the same top-bar space the old "Home" link gave
           the row, so removing it doesn't pull the gallery up under the
           (fixed) centred wordmark. */}
@@ -120,6 +168,7 @@ export default async function EventGalleryPage({
             <PhotoGallery
               photos={event.photos}
               eventTitle={event.title}
+              photoAlt={event.seo.photoAlt}
               // Events whose thumbnail is a re-export of photos[0] must not
               // prepend it again — the shot is already leading the grid.
               leadPhoto={
@@ -127,6 +176,17 @@ export default async function EventGalleryPage({
               }
             />
           )}
+
+          {/* Crawlable gallery blurb — sits after the photos, before the next-
+              gallery card. Deliberately NOT in the sticky left rail: on desktop
+              the rail is viewport-height with overflow-hidden, which would clip
+              a paragraph this long on shorter screens. */}
+          <p
+            className="mt-14 max-w-[72ch] text-[0.85rem] leading-relaxed opacity-60"
+            style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
+          >
+            {event.seo.blurb}
+          </p>
 
           {nextEvent && nextEvent.slug !== slug && (
             <Link

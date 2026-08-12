@@ -9,7 +9,7 @@ export default function SiteWordmark() {
   return (
     <Link
       href="/"
-      aria-label="Shoobydoo — home"
+      aria-label="Shoobydoo, home"
       className="fixed top-7 left-1/2 -translate-x-1/2 z-40 leading-none text-[#ededeb] whitespace-nowrap select-none text-[clamp(0.9rem,4vw,1.25rem)] md:text-[clamp(1rem,1.5vw,1.5rem)]"
       style={{
         fontFamily: "var(--font-fraunces), Georgia, serif",

@@ -4,11 +4,24 @@ import type { Metadata } from "next";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import SiteWordmark from "@/components/SiteWordmark";
 import PixelImage from "@/components/PixelImage";
+import { OG_IMAGE } from "@/lib/ogImage";
+
+const PAGE_TITLE = "About Shoobydoo | Vancouver Concert Photographer";
+const PAGE_DESCRIPTION =
+  "Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting festivals, club shows, and editorial work. Available for bookings.";
 
 export const metadata: Metadata = {
-  title: "About · Shoobydoo",
-  description:
-    "Shoobydoo: concert and live-music photography from the harbour and beyond.",
+  // title.absolute: the phrasing already carries the brand, so the root
+  // layout's "%s | Shoobydoo" template must not suffix it again.
+  title: { absolute: PAGE_TITLE },
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: "/about",
+    images: [OG_IMAGE],
+  },
 };
 
 // ── Shared type tokens ──────────────────────────────────────────────────────
@@ -28,15 +41,23 @@ const SANS = "Arial, Helvetica, sans-serif";
 // Captioned gallery thumbnails — colour concert photos, each with a three-line
 // caption (title / context / year) echoing the reference's "Girl with cat /
 // Charcoal on canvas / 2012".
-const THUMBS: { src: string; title: string; line2: string; line3: string }[] = [
+const THUMBS: {
+  src: string;
+  alt: string;
+  title: string;
+  line2: string;
+  line3: string;
+}[] = [
   {
     src: "/events/nghtmre/_DSC8872-Enhanced-NR.jpg",
+    alt: "NGHTMRE performing at Harbour Event Centre, Vancouver, BC, 2025",
     title: "NGHTMRE",
     line2: "Harbour Stage",
     line3: "2025",
   },
   {
     src: "/events/insomnia-2026/_7R46402-Enhanced-NR.jpg",
+    alt: "Crowd and stage at Insomnia Festival 2026, Vancouver, BC",
     title: "Insomnia Festival",
     line2: "Main Tent",
     line3: "2026",
@@ -46,11 +67,31 @@ const THUMBS: { src: string; title: string; line2: string; line3: string }[] = [
 // The four things Shoobydoo shoots, each shown as a captioned photo (used for
 // the simple mobile stack). The desktop row below is laid out explicitly to
 // reproduce the reference's irregular spacing. Filler concert images for now.
-const CATEGORIES: { name: string; desc: string; src: string }[] = [
-  { name: "Concerts", desc: "Club shows, headline sets", src: "/events/insomnia-2025/_DSC2977-Enhanced-NR.jpg" },
-  { name: "Festivals", desc: "Main stages, tents", src: "/events/insomnia-2026/_7R46147.jpg" },
-  { name: "Tours & Residencies", desc: "Multi-night runs", src: "/events/nghtmre/_DSC9116-Enhanced-NR.jpg" },
-  { name: "Editorial & Press", desc: "Portraits, covers", src: "/events/insomnia-2025/_DSC2886-Enhanced-NR.jpg" },
+const CATEGORIES: { name: string; desc: string; src: string; alt: string }[] = [
+  {
+    name: "Concerts",
+    desc: "Club shows, headline sets",
+    src: "/events/insomnia-2025/_DSC2977-Enhanced-NR.jpg",
+    alt: "Crowd and stage at Insomnia Festival 2025, Vancouver, BC",
+  },
+  {
+    name: "Festivals",
+    desc: "Main stages, tents",
+    src: "/events/insomnia-2026/_7R46147.jpg",
+    alt: "Crowd and stage at Insomnia Festival 2026, Vancouver, BC",
+  },
+  {
+    name: "Tours & Residencies",
+    desc: "Multi-night runs",
+    src: "/events/nghtmre/_DSC9116-Enhanced-NR.jpg",
+    alt: "NGHTMRE performing at Harbour Event Centre, Vancouver, BC, 2025",
+  },
+  {
+    name: "Editorial & Press",
+    desc: "Portraits, covers",
+    src: "/events/insomnia-2025/_DSC2886-Enhanced-NR.jpg",
+    alt: "Performer on stage at Insomnia Festival 2025, Vancouver, BC",
+  },
 ];
 
 export default function AboutPage() {
@@ -78,9 +119,9 @@ export default function AboutPage() {
               className="mt-8 max-w-[36ch] text-[0.82rem] leading-relaxed opacity-60 lg:mt-10 lg:ml-[50%]"
               style={{ fontFamily: SANS }}
             >
-              I&rsquo;m a concert and live-music photographer. Today, my work
-              can be seen across the harbour&rsquo;s main stages, the festival
-              fields, and the small rooms in between.
+              I&rsquo;m a concert and live music photographer based in
+              Vancouver, BC. My work runs across the city&rsquo;s main stages,
+              the festival fields, and the small rooms in between.
             </p>
           </div>
 
@@ -114,7 +155,10 @@ export default function AboutPage() {
           <div className="hidden lg:col-span-3 lg:block" aria-hidden />
           <figure className="lg:col-span-3">
             <div className="relative aspect-[4/5] w-full max-w-[16rem] overflow-hidden rounded-sm">
-              <PixelImage src="/about-portrait.jpg" alt="Shoobydoo" />
+              <PixelImage
+                src="/about-portrait.jpg"
+                alt="Shoobydoo, concert photographer based in Vancouver, BC"
+              />
             </div>
           </figure>
           <div className="lg:col-span-5 lg:pt-1">
@@ -122,14 +166,14 @@ export default function AboutPage() {
               className="text-[0.8rem] leading-relaxed"
               style={{ fontFamily: SANS }}
             >
-              Shoobydoo (based on the harbour, shooting live since 2019)
+              Shoobydoo (based in Vancouver, BC, shooting live since 2019)
             </p>
             <p
               className="mt-3 max-w-[40ch] text-[0.8rem] leading-relaxed opacity-55"
               style={{ fontFamily: SANS }}
             >
-              I&rsquo;m a concert and editorial photographer &mdash; self-taught
-              in the pit, part of the harbour&rsquo;s live-music circuit, working
+              I&rsquo;m a concert and editorial photographer, self-taught in
+              the pit and part of Vancouver&rsquo;s live music circuit, working
               its venues and the festival fields beyond.
             </p>
           </div>
@@ -152,7 +196,7 @@ export default function AboutPage() {
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm shadow-2xl">
             <PixelImage
               src="/events/insomnia-2025/_DSC2728-Enhanced-NR.jpg"
-              alt="Insomnia main stage"
+              alt="Crowd and stage at Insomnia Festival 2025, Vancouver, BC"
             />
           </div>
           <figcaption
@@ -169,7 +213,7 @@ export default function AboutPage() {
           {THUMBS.map((t) => (
             <figure key={t.src} className="flex flex-col">
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm">
-                <PixelImage src={t.src} alt={t.title} />
+                <PixelImage src={t.src} alt={t.alt} />
               </div>
               <figcaption
                 className="mt-3 text-[0.7rem] leading-snug"
@@ -225,7 +269,10 @@ export default function AboutPage() {
           {/* 1 — Concerts (tall 598:721) */}
           <figure className="ml-[1.5vw] w-[20.5vw]">
             <div className="relative aspect-[598/721] w-full overflow-hidden rounded-sm">
-              <PixelImage src="/events/insomnia-2025/_DSC2977-Enhanced-NR.jpg" alt="Concerts" />
+              <PixelImage
+                src="/events/insomnia-2025/_DSC2977-Enhanced-NR.jpg"
+                alt="Crowd and stage at Insomnia Festival 2025, Vancouver, BC"
+              />
             </div>
             <figcaption className="mt-[1.7vw] text-[0.8vw] leading-snug" style={{ fontFamily: SANS }}>
               Concerts<br /><span className="opacity-50">Club shows, headline sets</span>
@@ -235,7 +282,10 @@ export default function AboutPage() {
           {/* 2 — Festivals (tall 598:721) */}
           <figure className="ml-[1.4vw] w-[20.5vw]">
             <div className="relative aspect-[598/721] w-full overflow-hidden rounded-sm">
-              <PixelImage src="/events/insomnia-2026/_7R46147.jpg" alt="Festivals" />
+              <PixelImage
+                src="/events/insomnia-2026/_7R46147.jpg"
+                alt="Crowd and stage at Insomnia Festival 2026, Vancouver, BC"
+              />
             </div>
             <figcaption className="mt-[1.7vw] text-[0.8vw] leading-snug" style={{ fontFamily: SANS }}>
               Festivals<br /><span className="opacity-50">Main stages, tents</span>
@@ -245,7 +295,10 @@ export default function AboutPage() {
           {/* 3 — Tours & Residencies (short 3:2, leaves space below) */}
           <figure className="ml-[12.2vw] w-[20.5vw]">
             <div className="relative aspect-[598/398] w-full overflow-hidden rounded-sm">
-              <PixelImage src="/events/nghtmre/_DSC9116-Enhanced-NR.jpg" alt="Tours and residencies" />
+              <PixelImage
+                src="/events/nghtmre/_DSC9116-Enhanced-NR.jpg"
+                alt="NGHTMRE performing at Harbour Event Centre, Vancouver, BC, 2025"
+              />
             </div>
             <figcaption className="mt-[1.7vw] text-[0.8vw] leading-snug" style={{ fontFamily: SANS }}>
               Tours &amp; Residencies<br /><span className="opacity-50">Multi-night runs</span>
@@ -255,7 +308,10 @@ export default function AboutPage() {
           {/* 4 — Editorial & Press (tall 598:721) */}
           <figure className="ml-[1.4vw] w-[20.5vw]">
             <div className="relative aspect-[598/721] w-full overflow-hidden rounded-sm">
-              <PixelImage src="/events/insomnia-2025/_DSC2886-Enhanced-NR.jpg" alt="Editorial and press" />
+              <PixelImage
+                src="/events/insomnia-2025/_DSC2886-Enhanced-NR.jpg"
+                alt="Performer on stage at Insomnia Festival 2025, Vancouver, BC"
+              />
             </div>
             <figcaption className="mt-[1.7vw] text-[0.8vw] leading-snug" style={{ fontFamily: SANS }}>
               Editorial &amp; Press<br /><span className="opacity-50">Portraits, covers</span>
@@ -268,7 +324,7 @@ export default function AboutPage() {
           {CATEGORIES.map((c) => (
             <figure key={c.name} className="flex flex-col">
               <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm">
-                <PixelImage src={c.src} alt={c.name} />
+                <PixelImage src={c.src} alt={c.alt} />
               </div>
               <figcaption className="mt-3 text-[0.72rem] leading-snug" style={{ fontFamily: SANS }}>
                 <span>{c.name}</span>
@@ -299,6 +355,17 @@ export default function AboutPage() {
           style={{ ...SERIF, fontSize: "clamp(2.4rem, 7vw, 5.5rem)" }}
         >
           Bring me to your next show.
+        </p>
+
+        {/* Services line — plain crawlable statement of what's on offer and
+            where, backing up the display headline above. */}
+        <p
+          className="relative z-10 mt-6 max-w-[52ch] text-[0.85rem] leading-relaxed opacity-60"
+          style={{ fontFamily: SANS }}
+        >
+          Concert, festival, and event photography, available for bookings in
+          Vancouver, BC and beyond. Club shows, festival weekends, tours, and
+          editorial commissions.
         </p>
 
         {/* Link row — primary route to /contact. */}

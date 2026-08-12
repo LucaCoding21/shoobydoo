@@ -300,7 +300,7 @@ export default function HamburgerMenu({
         ref={logoRef}
         href="/"
         onClick={() => setOpen(false)}
-        aria-label="Shoobydoo — home"
+        aria-label="Shoobydoo, home"
         aria-hidden={!open}
         tabIndex={open ? 0 : -1}
         data-open={open}

@@ -57,16 +57,15 @@ function warmRushImage(src: string, mobile: boolean): Promise<void> {
       // Mirror the hero rush's <Image> so getImageProps (the same internal
       // function <Image> uses) yields the identical srcSet/src → the warmed
       // bytes are the very ones the rush requests → a cache hit, no pop-in.
-      // Desktop quality 95: the rush passes quality={90}, but that's not in
-      // next.config images.qualities ([75,95,100]) so Next serves it at 95 —
-      // we request 95 directly to match the served URL and stay within the
-      // configured set. Mobile rush renders at quality 75, so warm 75 there.
+      // Both rush variants render at quality={75}; keep this in lock-step with
+      // RushColumn / the mobile rush in HeroSequence.tsx or the warmed URLs
+      // stop matching the requested ones.
       const { props } = getImageProps({
         src,
         alt: "",
         fill: true,
         sizes: mobile ? "92vw" : "20vw",
-        quality: mobile ? 75 : 95,
+        quality: 75,
       });
       if (props.srcSet) img.srcset = props.srcSet;
       if (props.sizes) img.sizes = props.sizes;

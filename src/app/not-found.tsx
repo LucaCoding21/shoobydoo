@@ -4,7 +4,8 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import SiteWordmark from "@/components/SiteWordmark";
 
 export const metadata: Metadata = {
-  title: "Not found · Shoobydoo",
+  // Plain string on purpose: the root template renders "Page not found | Shoobydoo".
+  title: "Page not found",
 };
 
 // Root 404 — renders for any unmatched URL and for notFound() throws (e.g. a
@@ -31,7 +32,7 @@ export default function NotFound() {
         className="mt-8 max-w-[40ch] text-[0.82rem] leading-relaxed opacity-60"
         style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
       >
-        This page doesn&rsquo;t exist — the shot you&rsquo;re after isn&rsquo;t
+        This page doesn&rsquo;t exist. The shot you&rsquo;re after isn&rsquo;t
         here.
       </p>
 

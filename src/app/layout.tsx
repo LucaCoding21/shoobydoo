@@ -26,24 +26,39 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
-// The description doubles as the search snippet, so it carries the Instagram
-// handle — "shoobydoofruitsnacks" is a globally unique string, and having it in
-// indexable metadata is what lets a search for the handle land here.
+// Search-snippet copy. Location keywords (Vancouver, BC) do the local-SEO
+// work; discoverability by the Instagram handle is handled by the Person
+// JSON-LD below (alternateName + sameAs), so the handle no longer needs to
+// occupy snippet characters.
+const HOME_TITLE =
+  "Shoobydoo | Concert and Live Music Photographer in Vancouver, BC";
 const DESCRIPTION =
-  "Concert and live-music photography by Shoobydoo — @shoobydoofruitsnacks on Instagram. From the harbour's main stages, the festival fields, and the small rooms in between.";
+  "Concert and live music photography by Shoobydoo, based in Vancouver, BC. Shooting festivals, club shows, and everything in between.";
 
 // The share card itself is `opengraph-image.jpg` in this folder — Next's file
 // convention emits og:image (plus type/width/height) from it automatically, and
 // covers every route below `/`. Don't also set `openGraph.images` here or the
 // tags get emitted twice. `twitter.card` is what upgrades X to the wide layout;
 // X falls back to og:image, so no separate twitter-image file is needed.
+//
+// Titles: the template suffixes "| Shoobydoo" onto any future child page that
+// sets a plain string title. The existing inner pages (about, contact, events)
+// each carry the brand in a specific phrasing, so they set title.absolute and
+// bypass the template. alternates.canonical here covers the homepage; every
+// inner page declares its own.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Shoobydoo",
+  title: {
+    default: HOME_TITLE,
+    template: "%s | Shoobydoo",
+  },
   description: DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Shoobydoo",
-    description: "Concert photography from the harbour and beyond.",
+    title: HOME_TITLE,
+    description: DESCRIPTION,
     siteName: "Shoobydoo",
     type: "website",
     locale: "en_US",
@@ -51,8 +66,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Shoobydoo",
-    description: "Concert photography from the harbour and beyond.",
+    title: HOME_TITLE,
+    description: DESCRIPTION,
   },
 };
 
@@ -66,7 +81,8 @@ const PERSON_JSON_LD = {
   name: "Shoobydoo",
   alternateName: "shoobydoofruitsnacks",
   url: SITE_URL,
-  jobTitle: "Concert and live-music photographer",
+  jobTitle: "Concert Photographer",
+  areaServed: "Vancouver, BC",
   email: "mailto:shoobydoofruitsnacks@gmail.com",
   sameAs: ["https://instagram.com/shoobydoofruitsnacks"],
 };

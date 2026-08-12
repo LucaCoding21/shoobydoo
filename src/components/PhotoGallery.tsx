@@ -7,6 +7,9 @@ import { transitionTargetMounted } from "@/lib/eventTransition";
 type Props = {
   photos: readonly string[];
   eventTitle: string;
+  /** Descriptive alt applied to every photo, e.g.
+      "NGHTMRE performing at Harbour Event Centre, Vancouver, BC, 2025". */
+  photoAlt: string;
   /** The event's home-page thumbnail — shown as the FIRST grid tile so the
       homepage shared-element transition has a real in-grid landing slot. */
   leadPhoto?: string;
@@ -22,14 +25,14 @@ function GalleryTile({
   src,
   index,
   count,
-  eventTitle,
+  photoAlt,
   onOpen,
   buttonRef,
 }: {
   src: string;
   index: number;
   count: number;
-  eventTitle: string;
+  photoAlt: string;
   onOpen: (i: number) => void;
   buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
@@ -63,7 +66,7 @@ function GalleryTile({
       >
         <Image
           src={src}
-          alt={`${eventTitle} — photo ${index + 1}`}
+          alt={photoAlt}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           quality={75}
@@ -77,7 +80,12 @@ function GalleryTile({
   );
 }
 
-export default function PhotoGallery({ photos, eventTitle, leadPhoto }: Props) {
+export default function PhotoGallery({
+  photos,
+  eventTitle,
+  photoAlt,
+  leadPhoto,
+}: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const firstTileRef = useRef<HTMLButtonElement>(null);
 
@@ -137,7 +145,7 @@ export default function PhotoGallery({ photos, eventTitle, leadPhoto }: Props) {
             src={src}
             index={i}
             count={allPhotos.length}
-            eventTitle={eventTitle}
+            photoAlt={photoAlt}
             onOpen={setOpenIdx}
           />
         ))}
@@ -191,7 +199,7 @@ export default function PhotoGallery({ photos, eventTitle, leadPhoto }: Props) {
             <Image
               key={allPhotos[openIdx]}
               src={allPhotos[openIdx]}
-              alt={`${eventTitle} — photo ${openIdx + 1}`}
+              alt={photoAlt}
               fill
               sizes="92vw"
               quality={90}

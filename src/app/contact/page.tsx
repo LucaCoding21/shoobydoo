@@ -3,11 +3,24 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import SiteWordmark from "@/components/SiteWordmark";
 import ContactForm from "@/components/ContactForm";
 import ContactAscii from "@/components/ContactAscii";
+import { OG_IMAGE } from "@/lib/ogImage";
+
+const PAGE_TITLE = "Contact Shoobydoo | Book a Concert Photographer in Vancouver";
+const PAGE_DESCRIPTION =
+  "Book Shoobydoo for concert, festival, and event photography in Vancouver, BC. Get in touch by email or Instagram for bookings, press, and collaborations.";
 
 export const metadata: Metadata = {
-  title: "Contact · Shoobydoo",
-  description:
-    "Get in touch with Shoobydoo for concert, festival, tour, and editorial photography.",
+  // title.absolute: the phrasing already carries the brand, so the root
+  // layout's "%s | Shoobydoo" template must not suffix it again.
+  title: { absolute: PAGE_TITLE },
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: "/contact",
+    images: [OG_IMAGE],
+  },
 };
 
 // Direct channels mirrored from the site footer so the brand stays consistent.
