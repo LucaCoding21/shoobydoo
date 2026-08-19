@@ -2,11 +2,6 @@
 
 import { useState } from "react";
 
-// Static-site contact form: on submit it composes a mailto: link and hands off
-// to the visitor's email client. No backend required. The sender's name + email
-// are folded into the body since a mailto: can't set the From address.
-const TO = "shoobydoofruitsnacks@gmail.com";
-
 const fieldClass =
   "w-full bg-transparent border-b border-white/15 py-2 text-[#ededeb] " +
   "placeholder:text-white/25 focus:outline-none focus:border-white/60 " +
@@ -34,41 +29,29 @@ const EVENT_TYPES = [
   "Other",
 ];
 
-export default function ContactForm() {
-  const [sent, setSent] = useState(false);
+type Status = "idle" | "sending" | "sent" | "error";
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+export default function ContactForm() {
+  const [status, setStatus] = useState<Status>("idle");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
-    const name = String(data.get("name") || "").trim();
-    const email = String(data.get("email") || "").trim();
-    const eventType = String(data.get("eventType") || "").trim();
-    const date = String(data.get("date") || "").trim();
-    const artist = String(data.get("artist") || "").trim();
-    const message = String(data.get("message") || "").trim();
 
-    const body = [
-      message,
-      "",
-      "Booking details",
-      eventType && `Event type: ${eventType}`,
-      date && `Date: ${date}`,
-      artist && `Artist / act: ${artist}`,
-      "",
-      name && `From: ${name}`,
-      email && `Reply to: ${email}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const href =
-      `mailto:${TO}` +
-      `?subject=${encodeURIComponent(`Enquiry from ${name || "the site"}`)}` +
-      `&body=${encodeURIComponent(body)}`;
-
-    window.location.href = href;
-    setSent(true);
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(data)),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      setStatus("sent");
+      form.reset();
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -176,21 +159,31 @@ export default function ContactForm() {
       <div className="flex items-center gap-5 pt-2">
         <button
           type="submit"
-          className="group inline-flex items-center gap-3 border border-white/20 px-7 py-3 text-sm uppercase tracking-[0.2em] hover:border-white/70 hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          disabled={status === "sending"}
+          className="group inline-flex items-center gap-3 border border-white/20 px-7 py-3 text-sm uppercase tracking-[0.2em] hover:border-white/70 hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-40 disabled:cursor-default"
           style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
         >
-          Send
+          {status === "sending" ? "Sending…" : "Send"}
           <span className="transition-transform duration-300 group-hover:translate-x-1">
             →
           </span>
         </button>
-        {sent && (
+        {status === "sent" && (
           <span
             className="text-[0.65rem] opacity-60"
             style={labelStyle}
             role="status"
           >
-            Opening your mail app…
+            Sent — talk soon.
+          </span>
+        )}
+        {status === "error" && (
+          <span
+            className="text-[0.65rem] text-red-400/80"
+            style={labelStyle}
+            role="status"
+          >
+            Something went wrong — try again.
           </span>
         )}
       </div>
