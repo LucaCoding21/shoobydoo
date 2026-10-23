@@ -180,13 +180,29 @@ export default async function EventGalleryPage({
           {/* Crawlable gallery blurb — sits after the photos, before the next-
               gallery card. Deliberately NOT in the sticky left rail: on desktop
               the rail is viewport-height with overflow-hidden, which would clip
-              a paragraph this long on shorter screens. */}
-          <p
-            className="mt-14 max-w-[72ch] text-[0.85rem] leading-relaxed opacity-60"
+              a paragraph this long on shorter screens. Collapsed behind a
+              native <details> so it stays out of the way; the text is still in
+              the server-rendered HTML, so crawlers index it all the same. */}
+          <details
+            className="group mt-14 max-w-[72ch]"
             style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
           >
-            {event.seo.blurb}
-          </p>
+            <summary
+              className="inline-flex items-center gap-3 list-none text-[0.7rem] opacity-40 hover:opacity-80 transition-opacity rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [&::-webkit-details-marker]:hidden"
+              style={{ textTransform: "uppercase", letterSpacing: "0.2em" }}
+            >
+              About this gallery
+              <span
+                aria-hidden="true"
+                className="text-[0.9rem] leading-none transition-transform group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <p className="mt-4 text-[0.85rem] leading-relaxed opacity-60">
+              {event.seo.blurb}
+            </p>
+          </details>
 
           {nextEvent && nextEvent.slug !== slug && (
             <Link

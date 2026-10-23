@@ -2,6 +2,8 @@
 // /Website pictures. Photos are resized exports (max 2000px, JPEG q80) under
 // /public/events/<slug>/. To refresh: re-download the Dropbox folder zip,
 // re-run the resize script (or sips by hand), and update the photo arrays.
+// Newer Dropbox exports arrive at 900px wide; `sips -Z 2000` would upscale
+// those, so only cap files that are actually over 2000px.
 
 export type EventSlug =
   | "nghtmre"
@@ -13,8 +15,11 @@ export type EventSlug =
   | "svdden-death"
   | "fvded-in-the-park"
   | "barely-alive"
-  | "sisi"
-  | "koji-aiken";
+  | "koji-aiken"
+  | "shambhala-2026"
+  | "friendzy-fest-2026"
+  | "smiles-only"
+  | "sullivan-king";
 
 // Hand-written SEO strings per event. All copy rules: no em dashes anywhere,
 // titles ~60 chars where the venue name allows, descriptions under 155 chars,
@@ -357,36 +362,6 @@ export const EVENTS: Record<EventSlug, EventData> = {
       "_DSC0184-Enhanced-NR.jpg",
     ]),
   },
-  sisi: {
-    slug: "sisi",
-    title: "SISI",
-    homeThumbSrc: "/thumbnails/sisi.jpg",
-    venue: "Harbour",
-    date: "2025",
-    thumbIsFirstPhoto: true,
-    seo: {
-      title: "SISI at Harbour Event Centre 2025 | Concert Photos by Shoobydoo",
-      description:
-        "SISI live at Harbour Event Centre, Vancouver, BC, 2025. Full photo gallery by Vancouver concert photographer Shoobydoo.",
-      photoAlt: "SISI performing at Harbour Event Centre, Vancouver, BC, 2025",
-      venueName: "Harbour Event Centre",
-      locality: "Vancouver",
-      region: "BC",
-      blurb:
-        "SISI at Harbour Event Centre, Vancouver, BC, 2025. This gallery collects frames from SISI's set at Harbour Event Centre, shot from the rail and the floor over the course of the night. Club shows on this scale sit in a sweet spot for live photography: enough production to paint the room in colour, and a crowd close enough to the stage that both fit in a single frame. These photos chase that overlap, the artist mid-set with the audience right there in the shot. Everything here was captured live, with no posing and no reshoots. Shoobydoo is a concert and live music photographer based in Vancouver, BC, available for club shows, festivals, tours, and press coverage. For bookings, reach out through the contact page.",
-    },
-    photos: withSlug("sisi", [
-      "7R404963-Enhanced-NR.jpg",
-      "7R404841-Enhanced-NR.jpg",
-      "7R404923-Enhanced-NR.jpg",
-      "_7R48642-Enhanced-NR.jpg",
-      "7R404822-Enhanced-NR.jpg",
-      "7R404830-Enhanced-NR.jpg",
-      "7R404912-Enhanced-NR.jpg",
-      "7R404945-Enhanced-NR.jpg",
-      "7R404851-Enhanced-NR.jpg",
-    ]),
-  },
   "koji-aiken": {
     slug: "koji-aiken",
     title: "KOJI AIKEN",
@@ -397,16 +372,166 @@ export const EVENTS: Record<EventSlug, EventData> = {
     seo: {
       title: "Koji Aiken at Harbour Event Centre 2026 | Photos by Shoobydoo",
       description:
-        "Koji Aiken live at Harbour Event Centre, Vancouver, BC, 2026. Photos by Vancouver concert photographer Shoobydoo.",
+        "Koji Aiken live at Harbour Event Centre, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
       photoAlt: "Koji Aiken performing at Harbour Event Centre, Vancouver, BC, 2026",
       venueName: "Harbour Event Centre",
       locality: "Vancouver",
       region: "BC",
       blurb:
-        "Koji Aiken at Harbour Event Centre, Vancouver, BC, 2026. This gallery currently holds a single frame from Koji Aiken's set at Harbour Event Centre: the artist, the light, and the room, all caught in the same instant. Sometimes one photo carries a whole night. Live sets move fast, and the job is to be ready when the moment that defines them arrives. More of Shoobydoo's recent work is on Instagram and across the other galleries on this site, from club shows on Vancouver's waterfront to full festival weekends. Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting club shows, festivals, tours, and editorial commissions. For booking inquiries or prints, head to the contact page.",
+        "Koji Aiken, photographed live by Shoobydoo. This gallery collects frames from across Koji Aiken's sets: packed rooms shot from behind the decks, the name glowing across the stage screens in neon, and close moments at the booth with the crowd pressed right up against the barrier. Different rooms and different nights, but the same throughline in every shot, the push and pull between the artist and the floor. Bass shows reward patience, and the best of these frames landed in the split second before a drop. Every image was captured live, with no posing and no staging. Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting club shows, festivals, tours, and editorial commissions. For booking inquiries or prints, head to the contact page.",
     },
+    // _DSC1063 leads: it's the folder's chosen thumbnail. The rest are spread
+    // out so the near-identical behind-the-decks frames don't sit side by side.
     photos: withSlug("koji-aiken", [
+      "_DSC1063-Enhanced-NR.jpg",
+      "_DSC1710-Enhanced-NR.jpg",
+      "_7R46596-Enhanced-NR.jpg",
+      "_DSC1300.jpg",
+      "_DSC8621-Enhanced-NR.jpg",
+      "_7R46685-Enhanced-NR.jpg",
+      "_DSC1797-Enhanced-NR.jpg",
       "_DSC3468-Enhanced-NR.jpg",
+      "_7R46097-Enhanced-NR.jpg",
+      "_DSC4659.jpg",
+      "_7R46601-Enhanced-NR.jpg",
+      "_DSC1317-Enhanced-NR.jpg",
+      "_DSC1845-Enhanced-NR.jpg",
+      "_7R47932-Enhanced-NR.jpg",
+      "_DSC3016.jpg",
+      "_7R46608-Enhanced-NR.jpg",
+      "_DSC4606.jpg",
+      "_DSC9798.jpg",
+    ]),
+  },
+  "shambhala-2026": {
+    slug: "shambhala-2026",
+    title: "SHAMBHALA 2026",
+    homeThumbSrc: "/thumbnails/shambhala-2026.jpg",
+    venue: "Salmo River Ranch",
+    date: "2026",
+    thumbIsFirstPhoto: true,
+    seo: {
+      title: "Shambhala Music Festival 2026 | Concert Photos by Shoobydoo",
+      description:
+        "Shambhala Music Festival 2026 at the Salmo River Ranch, Salmo, BC. Full festival photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Crowd and stage at Shambhala Music Festival 2026, Salmo River Ranch, Salmo, BC",
+      venueName: "Salmo River Ranch",
+      locality: "Salmo",
+      region: "BC",
+      blurb:
+        "Shambhala Music Festival 2026 at the Salmo River Ranch, Salmo, BC. Shambhala builds its stages into the forest, and each one feels like its own world: towering light rigs, hand-built wooden structures, and lasers cutting through the trees over a sea of totems and glow sticks. This gallery moves through the weekend from wide frames of packed dance floors to close shots from behind the decks, where the crowd presses right up to the booth. The light out here changes by the minute, from deep reds to cold blue lasers, and these photos try to keep pace with it. Every image was shot live over the course of the festival. Shoobydoo is a concert and live music photographer based in Vancouver, BC, covering festivals, club shows, and tours across BC and beyond. To book festival coverage, get in touch through the contact page.",
+    },
+    // Exported at 4:5; the home thumbnail is a centre crop of the lead photo.
+    photos: withSlug("shambhala-2026", [
+      "_7R44314-Enhanced-NR-4.jpg",
+      "_7R43953-Enhanced-NR-2.jpg",
+      "_7R44024-Enhanced-NR-2.jpg",
+      "_7R44034-Enhanced-NR-2.jpg",
+      "_7R44222-Enhanced-NR-2.jpg",
+      "_7R44261-Enhanced-NR-2.jpg",
+      "_7R44392-Enhanced-NR-2.jpg",
+      "_7R44659-Enhanced-NR-2.jpg",
+      "_7R44691-Enhanced-NR-2.jpg",
+      "_7R44763-Enhanced-NR-3.jpg",
+    ]),
+  },
+  "friendzy-fest-2026": {
+    slug: "friendzy-fest-2026",
+    title: "FRIENDZY FEST 2026",
+    homeThumbSrc: "/thumbnails/friendzy-fest-2026.jpg",
+    venue: "Rangeton Park",
+    date: "2026",
+    thumbIsFirstPhoto: true,
+    seo: {
+      title: "Friendzy Fest 2026 at Rangeton Park | Photos by Shoobydoo",
+      description:
+        "Friendzy Fest 2026 at Rangeton Park, Evansburg, AB. Full festival photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Crowd and stage at Friendzy Fest 2026, Rangeton Park, Evansburg, AB",
+      venueName: "Rangeton Park",
+      locality: "Evansburg",
+      region: "AB",
+      blurb:
+        "Friendzy Fest 2026 at Rangeton Park, Evansburg, AB. Out in the Alberta countryside, Friendzy Fest builds its stages big and strange, and the centrepiece this year was a booth framed by a giant set of jaws that lit up a new colour with every drop. This gallery covers the weekend from inside those jaws and out in the crowd: DJs shot from behind the decks, lasers sweeping over the field, and fire bursting off the stage after dark. Every frame was captured live during the festival, unposed and unstaged. Shoobydoo is a concert and live music photographer based in Vancouver, BC, travelling for festivals, club shows, and tours across Western Canada. For festival coverage or print inquiries, get in touch through the contact page.",
+    },
+    photos: withSlug("friendzy-fest-2026", [
+      "_7R46056-Enhanced-NR-2.jpg",
+      "_7R45190-Enhanced-NR.jpg",
+      "_7R45203-Enhanced-NR.jpg",
+      "_7R45254.jpg",
+      "_7R45323-Enhanced-NR.jpg",
+      "_7R45342-Enhanced-NR.jpg",
+      "_7R45381-Enhanced-NR.jpg",
+      "_7R45386-Enhanced-NR.jpg",
+      "_7R45418-Enhanced-NR.jpg",
+      "_7R45463-Enhanced-NR.jpg",
+      "_7R45484-Enhanced-NR.jpg",
+      "_7R46005-Enhanced-NR.jpg",
+      "_7R46094-Enhanced-NR.jpg",
+      "_7R46151-Enhanced-NR.jpg",
+    ]),
+  },
+  "smiles-only": {
+    slug: "smiles-only",
+    title: "SMILES ONLY",
+    homeThumbSrc: "/thumbnails/smiles-only.jpg",
+    venue: "Harbour",
+    date: "2026",
+    seo: {
+      title: "Smiles Only at Harbour Event Centre 2026 | Photos by Shoobydoo",
+      description:
+        "Smiles Only live at Harbour Event Centre, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Crowd and stage at Smiles Only, Harbour Event Centre, Vancouver, BC, 2026",
+      venueName: "Harbour Event Centre",
+      locality: "Vancouver",
+      region: "BC",
+      blurb:
+        "Smiles Only at Harbour Event Centre, Vancouver, BC, 2026. This was a night built around production: a curved LED ceiling rippling with light over the crowd, and a stage wrapped in the Smiles Only logo spinning in red. The gallery follows the show from behind the decks, where the artists faced a packed floor of raised hands, out into the middle of the room, where that ceiling turned the whole venue into one giant screen. Every photo here was shot live during the show, with no posing and no reshoots. Shoobydoo is a concert and live music photographer based in Vancouver, BC, covering club shows, festivals, tours, and editorial work across the city. For bookings or print inquiries, reach out through the contact page.",
+    },
+    // The gallery leads with the thumbnail (_7R49172, not in this list), so
+    // its near-twin _7R49165 sits further down instead of on the first screen.
+    photos: withSlug("smiles-only", [
+      "_7R49011-Enhanced-NR.jpg",
+      "_7R49138-Enhanced-NR.jpg",
+      "_7R49213-Enhanced-NR.jpg",
+      "_7R49268-Enhanced-NR.jpg",
+      "_7R49342-Enhanced-NR.jpg",
+      "_7R49367.jpg",
+      "_7R49475-Enhanced-NR.jpg",
+      "_7R49165-Enhanced-NR.jpg",
+      "_7R49564-Enhanced-NR.jpg",
+      "_7R49597-Enhanced-NR.jpg",
+      "_7R49629-Enhanced-NR.jpg",
+    ]),
+  },
+  "sullivan-king": {
+    slug: "sullivan-king",
+    title: "SULLIVAN KING",
+    homeThumbSrc: "/thumbnails/sullivan-king.jpg",
+    venue: "Harbour",
+    date: "2026",
+    thumbIsFirstPhoto: true,
+    seo: {
+      title: "Sullivan King at Harbour Event Centre 2026 | Photos by Shoobydoo",
+      description:
+        "Sullivan King live at Harbour Event Centre, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Sullivan King performing at Harbour Event Centre, Vancouver, BC, 2026",
+      venueName: "Harbour Event Centre",
+      locality: "Vancouver",
+      region: "BC",
+      blurb:
+        "Sullivan King at Harbour Event Centre, Vancouver, BC, 2026. Few artists blur the line between a bass show and a metal show like Sullivan King, and this night had both: heavy drops, a live guitar played in front of full LED walls, and a crowd that never stopped moving. This gallery tracks the set from the rail to the back of the room, through green lasers, smoke blasts, and a floor full of fans in Sullivan King jerseys. Every image was shot live from the pit, the stage, and the crowd, unposed and in the moment. Shoobydoo is a concert and live music photographer based in Vancouver, BC, available for club shows, festivals, tours, and editorial commissions. For booking details, head to the contact page.",
+    },
+    // Camera counter rolled over mid-set, so 40781/40827 are the last frames.
+    photos: withSlug("sullivan-king", [
+      "_7R49931-Enhanced-NR.jpg",
+      "_7R49803-Enhanced-NR.jpg",
+      "_7R49813-Enhanced-NR.jpg",
+      "_7R49850-Enhanced-NR.jpg",
+      "_7R49877-Enhanced-NR.jpg",
+      "_7R49975-Enhanced-NR.jpg",
+      "_7R49997-Enhanced-NR.jpg",
+      "_7R40781-Enhanced-NR.jpg",
+      "_7R40827-Enhanced-NR.jpg",
     ]),
   },
 };
