@@ -166,7 +166,7 @@ export default function AboutPage() {
               className="text-[0.8rem] leading-relaxed"
               style={{ fontFamily: SANS }}
             >
-              Shoobydoo (based in Vancouver, BC, shooting live since 2019)
+              Shoobydoo (based in Vancouver, BC, shooting live since 2023)
             </p>
             <p
               className="mt-3 max-w-[40ch] text-[0.8rem] leading-relaxed opacity-55"

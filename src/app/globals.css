@@ -186,11 +186,11 @@ body {
   }
 }
 
-/* ── 0→100 preloader ───────────────────────────────────────────────────────
-   First-load curtain (see Preloader.tsx). Counts up in the Fraunces display cut
-   over the brand black, then lifts up to reveal the hero. Sits below the custom
-   cursor (z-99999) so the Sharingan still tracks over it. Skipped on client-nav
-   and under reduced-motion. */
+/* ── Sharingan preloader ────────────────────────────────────────────────────
+   First-load curtain (see Preloader.tsx). A Sharingan spins in the centre of
+   the brand black, then the curtain lifts up to reveal the hero. Sits below the
+   custom cursor (z-99999) so the cursor Sharingan still tracks over it. Skipped
+   on client-nav and under reduced-motion. */
 .preloader {
   position: fixed;
   inset: 0;
@@ -210,9 +210,6 @@ body {
 
 .preloader__inner {
   display: flex;
-  flex-direction: column;
-  width: min(82vw, 640px);
-  gap: clamp(0.9rem, 2vw, 1.4rem);
   opacity: 1;
   transition: opacity 280ms ease-out;
 }
@@ -220,46 +217,39 @@ body {
   opacity: 0;
 }
 
-/* Small wordmark, top-left of the block — the static echo of the hero logo. */
-.preloader__wordmark {
-  align-self: flex-start;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 400;
-  font-variation-settings: "opsz" 144, "SOFT" 100;
-  text-transform: uppercase;
-  letter-spacing: 0.34em;
-  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
-  color: #ededeb;
-  opacity: 0.6;
+/* Same artwork as the cursor. It winds up: two turns over 1.4s (MIN_SHOW_MS in
+   Preloader.tsx) on an ease-in, starting at ~130deg/s and building to ~820deg/s.
+   If loading runs longer, a linear spin takes over at that top speed. The
+   wind-up ends on a whole turn, so the hand-off is seamless and it never
+   slows or stops. */
+.preloader__sharingan {
+  width: clamp(64px, 9vw, 96px);
+  aspect-ratio: 1;
+  background: url("/cursor/sharingan.webp") center / contain no-repeat;
+  animation:
+    preloader-spin-up 1.4s cubic-bezier(0.4, 0.1, 0.75, 0.6) both,
+    preloader-spin 0.44s linear 1.4s infinite;
 }
 
-/* The big counter, right-aligned so its edge stays put as digits change. */
-.preloader__count {
-  align-self: flex-end;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 400;
-  font-variation-settings: "opsz" 144, "SOFT" 100;
-  font-size: clamp(5rem, 18vw, 11rem);
-  line-height: 0.85;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
+/* Both keyframes need an explicit `from`: an implicit one starts from the
+   underlying value, which for preloader-spin is the wind-up's filled 720deg —
+   it would then run 720 → 360 and spin backwards. */
+@keyframes preloader-spin-up {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(720deg);
+  }
 }
 
-/* Hairline progress track + fill, scaled left→right via inline transform. */
-.preloader__bar {
-  position: relative;
-  width: 100%;
-  height: 1px;
-  background: rgba(237, 237, 235, 0.16);
-  overflow: hidden;
-}
-.preloader__fill {
-  position: absolute;
-  inset: 0;
-  background: #ededeb;
-  transform-origin: left center;
-  transform: scaleX(0);
-  transition: transform 120ms linear;
+@keyframes preloader-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* No curtain at all when motion is reduced — the Preloader returns null, but

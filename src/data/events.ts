@@ -85,21 +85,20 @@ export const EVENTS: Record<EventSlug, EventData> = {
       blurb:
         "NGHTMRE at Harbour Event Centre, Vancouver, BC, 2025. This gallery collects photos from a night of heavyweight bass at one of Vancouver's busiest waterfront venues. Shot from the pit and from inside the crowd, the set covered everything a NGHTMRE show promises: hard drops, a relentless light rig, and a floor that never stopped moving. The frames here follow the full arc of the evening, from the first build to the final drop, with as much attention on the crowd as on the stage. Every image was photographed live, with no staging and no reshoots. Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting club shows, festivals, and tours across the city and beyond. For bookings or print inquiries, get in touch through the contact page.",
     },
+    // The Dropbox export had duplicate edits of 8872, 9190 and 9337; only the
+    // brighter version of each is kept, per Shoobydoo.
     photos: withSlug("nghtmre", [
       "_DSC9096-Enhanced-NR.jpg",
       "_DSC8872-Enhanced-NR.jpg",
-      "_DSC8872-Enhanced-NR-2.jpg",
       "_DSC8883.jpg",
       "_DSC8905.jpg",
       "_DSC9026-Enhanced-NR.jpg",
       "_DSC9116-Enhanced-NR.jpg",
       "_DSC9126-Enhanced-NR.jpg",
       "_DSC9129-Enhanced-NR.jpg",
-      "_DSC9190-Enhanced-NR.jpg",
       "_DSC9190-Enhanced-NR-2.jpg",
       "_DSC9193-Enhanced-NR.jpg",
       "_DSC9337-Enhanced-NR.jpg",
-      "_DSC9337.jpg",
     ]),
   },
   phrva: {
@@ -107,18 +106,18 @@ export const EVENTS: Record<EventSlug, EventData> = {
     title: "PHRVA at Village Studios",
     homeThumbSrc: "/thumbnails/phrva-village-studios.jpg",
     venue: "Village Studios",
-    date: "2025",
+    date: "2026",
     thumbIsFirstPhoto: true,
     seo: {
-      title: "PHRVA at Village Studios 2025 | Concert Photos by Shoobydoo",
+      title: "PHRVA at Village Studios 2026 | Concert Photos by Shoobydoo",
       description:
-        "PHRVA live at Village Studios, Vancouver, BC, 2025. Full photo gallery by Vancouver concert photographer Shoobydoo.",
-      photoAlt: "PHRVA performing at Village Studios, Vancouver, BC, 2025",
+        "PHRVA live at Village Studios, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "PHRVA performing at Village Studios, Vancouver, BC, 2026",
       venueName: "Village Studios",
       locality: "Vancouver",
       region: "BC",
       blurb:
-        "PHRVA at Village Studios, Vancouver, BC, 2025. Village Studios trades big-room scale for something closer and louder, and this set leaned into that. The gallery below was shot in the middle of it, close enough to catch the sweat on the rail and the light bleeding through the haze. Smaller rooms are where live photography gets interesting: the light is harder, the crowd is tighter, and every frame has to be earned. These photos follow PHRVA's set from the opening tracks to the closing run, alongside the crowd that kept the floor moving all night. Photographed live by Shoobydoo, a concert and live music photographer based in Vancouver, BC, available for club shows, festivals, tours, and editorial work. For bookings, reach out through the contact page.",
+        "PHRVA at Village Studios, Vancouver, BC, 2026. Village Studios trades big-room scale for something closer and louder, and this set leaned into that. The gallery below was shot in the middle of it, close enough to catch the sweat on the rail and the light bleeding through the haze. Smaller rooms are where live photography gets interesting: the light is harder, the crowd is tighter, and every frame has to be earned. These photos follow PHRVA's set from the opening tracks to the closing run, alongside the crowd that kept the floor moving all night. Photographed live by Shoobydoo, a concert and live music photographer based in Vancouver, BC, available for club shows, festivals, tours, and editorial work. For bookings, reach out through the contact page.",
     },
     // 7R403305 leads: it's the shot the home-page thumbnail was exported from.
     photos: withSlug("phrva", [
@@ -138,17 +137,17 @@ export const EVENTS: Record<EventSlug, EventData> = {
     title: "Restricted at Harbour",
     homeThumbSrc: "/thumbnails/restricted-harbour.jpg",
     venue: "Harbour",
-    date: "2025",
+    date: "2026",
     seo: {
-      title: "Restricted at Harbour Event Centre 2025 | Photos by Shoobydoo",
+      title: "Restricted at Harbour Event Centre 2026 | Photos by Shoobydoo",
       description:
-        "Restricted live at Harbour Event Centre, Vancouver, BC, 2025. Full photo gallery by Vancouver concert photographer Shoobydoo.",
-      photoAlt: "Restricted performing at Harbour Event Centre, Vancouver, BC, 2025",
+        "Restricted live at Harbour Event Centre, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Restricted performing at Harbour Event Centre, Vancouver, BC, 2026",
       venueName: "Harbour Event Centre",
       locality: "Vancouver",
       region: "BC",
       blurb:
-        "Restricted at Harbour Event Centre, Vancouver, BC, 2025. A tight set of frames from a heavy night of bass music on Vancouver's waterfront. Harbour Event Centre gives a show two things a photographer loves: a high stage that silhouettes an artist against the rig, and a floor packed close enough that the energy reads in every shot. This gallery pulls the strongest moments from Restricted's set, from full-room light moments to the faces in the front row. Every photo was taken live during the show, unposed and unstaged. Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting club nights, festivals, and tours. If you want this kind of coverage for your own show, booking details are on the contact page.",
+        "Restricted at Harbour Event Centre, Vancouver, BC, 2026. A tight set of frames from a heavy night of bass music on Vancouver's waterfront. Harbour Event Centre gives a show two things a photographer loves: a high stage that silhouettes an artist against the rig, and a floor packed close enough that the energy reads in every shot. This gallery pulls the strongest moments from Restricted's set, from full-room light moments to the faces in the front row. Every photo was taken live during the show, unposed and unstaged. Shoobydoo is a concert and live music photographer based in Vancouver, BC, shooting club nights, festivals, and tours. If you want this kind of coverage for your own show, booking details are on the contact page.",
     },
     photos: withSlug("restricted", [
       "7R402845-Enhanced-NR.jpg",
@@ -336,18 +335,18 @@ export const EVENTS: Record<EventSlug, EventData> = {
     title: "BARELY ALIVE",
     homeThumbSrc: "/thumbnails/barely-alive.jpg",
     venue: "Harbour",
-    date: "2026",
+    date: "2025",
     thumbIsFirstPhoto: true,
     seo: {
-      title: "Barely Alive at Harbour Event Centre 2026 | Photos by Shoobydoo",
+      title: "Barely Alive at Harbour Event Centre 2025 | Photos by Shoobydoo",
       description:
-        "Barely Alive live at Harbour Event Centre, Vancouver, BC, 2026. Full photo gallery by Vancouver concert photographer Shoobydoo.",
-      photoAlt: "Barely Alive performing at Harbour Event Centre, Vancouver, BC, 2026",
+        "Barely Alive live at Harbour Event Centre, Vancouver, BC, 2025. Full photo gallery by Vancouver concert photographer Shoobydoo.",
+      photoAlt: "Barely Alive performing at Harbour Event Centre, Vancouver, BC, 2025",
       venueName: "Harbour Event Centre",
       locality: "Vancouver",
       region: "BC",
       blurb:
-        "Barely Alive at Harbour Event Centre, Vancouver, BC, 2026. Dubstep shows reward photographers who wait: the best frames land in the half second between the build and the drop, when the lights flare and the whole floor jumps at once. This gallery is built from those moments across Barely Alive's set at Harbour Event Centre, along with the crowd shots that carry the other half of the story. Everything was shot from the pit and from inside the audience, unposed and in the moment. Shoobydoo is a concert and live music photographer based in Vancouver, BC, covering club shows, festivals, tours, and editorial work across the city. Booking inquiries are always open through the contact page.",
+        "Barely Alive at Harbour Event Centre, Vancouver, BC, 2025. Dubstep shows reward photographers who wait: the best frames land in the half second between the build and the drop, when the lights flare and the whole floor jumps at once. This gallery is built from those moments across Barely Alive's set at Harbour Event Centre, along with the crowd shots that carry the other half of the story. Everything was shot from the pit and from inside the audience, unposed and in the moment. Shoobydoo is a concert and live music photographer based in Vancouver, BC, covering club shows, festivals, tours, and editorial work across the city. Booking inquiries are always open through the contact page.",
     },
     photos: withSlug("barely-alive", [
       "_DSC0056.jpg",
