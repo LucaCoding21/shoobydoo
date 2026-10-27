@@ -37,7 +37,7 @@ const MAX_WAIT_MS = 6000;
 // Floor on how long the Sharingan shows, even when everything is already cached:
 // the length of its wind-up spin (preloader-spin-up in globals.css), so it reads
 // as a deliberate beat instead of a flash.
-const MIN_SHOW_MS = 1400;
+const MIN_SHOW_MS = 1000;
 
 // Warm one image as the rush will actually request it: build the same optimized
 // srcSet/sizes via getImageProps so the browser fetches the identical variant
@@ -155,6 +155,7 @@ export default function Preloader() {
     >
       <div className={`preloader__inner${contentOut ? " is-out" : ""}`}>
         <div className="preloader__sharingan" />
+        <span className="preloader__label">Loading</span>
       </div>
     </div>
   );

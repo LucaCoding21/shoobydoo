@@ -210,6 +210,9 @@ body {
 
 .preloader__inner {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1rem, 2.2vw, 1.4rem);
   opacity: 1;
   transition: opacity 280ms ease-out;
 }
@@ -217,39 +220,53 @@ body {
   opacity: 0;
 }
 
-/* Same artwork as the cursor. It winds up: two turns over 1.4s (MIN_SHOW_MS in
-   Preloader.tsx) on an ease-in, starting at ~130deg/s and building to ~820deg/s.
-   If loading runs longer, a linear spin takes over at that top speed. The
-   wind-up ends on a whole turn, so the hand-off is seamless and it never
-   slows or stops. */
+/* Same artwork as the cursor. It winds up: 1.5 turns over 1s (MIN_SHOW_MS in
+   Preloader.tsx) on an ease-in, starting at ~135deg/s and building to ~860deg/s.
+   If loading runs longer, a linear spin takes over at that top speed from the
+   exact angle the wind-up ends on, so it never slows, stops or jumps. */
 .preloader__sharingan {
   width: clamp(64px, 9vw, 96px);
   aspect-ratio: 1;
   background: url("/cursor/sharingan.webp") center / contain no-repeat;
   animation:
-    preloader-spin-up 1.4s cubic-bezier(0.4, 0.1, 0.75, 0.6) both,
-    preloader-spin 0.44s linear 1.4s infinite;
+    preloader-spin-up 1s cubic-bezier(0.4, 0.1, 0.75, 0.6) both,
+    preloader-spin 0.42s linear 1s infinite;
 }
 
 /* Both keyframes need an explicit `from`: an implicit one starts from the
-   underlying value, which for preloader-spin is the wind-up's filled 720deg —
-   it would then run 720 → 360 and spin backwards. */
+   underlying value (for preloader-spin, the wind-up's filled end angle), and
+   preloader-spin must pick up at 540deg to continue seamlessly. */
 @keyframes preloader-spin-up {
   from {
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(720deg);
+    transform: rotate(540deg);
   }
 }
 
 @keyframes preloader-spin {
   from {
-    transform: rotate(0deg);
+    transform: rotate(540deg);
   }
   to {
-    transform: rotate(360deg);
+    transform: rotate(900deg);
   }
+}
+
+/* Small "Loading" label under the Sharingan, in the display serif's tracked
+   caps. */
+.preloader__label {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 400;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  /* Balance the trailing letter-spacing so the word sits optically centred. */
+  margin-right: -0.34em;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  color: #ededeb;
+  opacity: 0.6;
 }
 
 /* No curtain at all when motion is reduced — the Preloader returns null, but
