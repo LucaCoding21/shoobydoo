@@ -158,6 +158,19 @@ export default function Footer() {
 
         {/* Vertical room so the art can rise without crowding the links. */}
         <div className="h-[34vh] max-h-[420px] sm:h-[40vh] lg:h-[46vh]" />
+
+        {/* Studio credit — right-aligned to stay clear of the bottom-left art. */}
+        <p className="text-right text-xs">
+          <span className="opacity-60">Built with care by </span>
+          <a
+            href="https://cloverfield.studio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 opacity-70 transition-opacity hover:opacity-100"
+          >
+            cloverfield.studio
+          </a>
+        </p>
       </div>
     </footer>
   );
